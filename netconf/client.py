@@ -145,7 +145,12 @@ class NetconfClientSession (NetconfSession):
 
         replies = tree.xpath("/nc:rpc-reply", namespaces=NSMAP)
         if not replies:
-            raise SessionError(msg, "No rpc-reply found")
+            notification = tree.xpath("/notification", namespaces=NSMAP)
+            if not notification:
+                raise SessionError(msg, "No rpc-reply or notification found")
+            else:
+                print("ççççççççççççççççççççççççççNOTIF received")
+                return
 
         for reply in replies:
             try:

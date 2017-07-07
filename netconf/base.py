@@ -229,10 +229,9 @@ class NetconfSession (object):
             pkt_stream = self.pkt_stream
         pkt_stream.send_pdu(XML_HEADER + msg, self.new_framing)
         #TODO: Remove this
-        print("********************* SEND_MESSAGE *********************************")
+        print("********************* SEND_MESSAGE: starts ********************************")
         print(msg)
-        print("********************* SEND_MESSAGE *********************************")
-        print("********************* SEND_MESSAGE *********************************")
+        print("********************* SEND_MESSAGE: ends **********************************")
 
     def _receive_message (self):
         # private method to receive a full message.
@@ -359,6 +358,10 @@ class NetconfSession (object):
                     assert pkt_stream is not None
 
                 msg = self._receive_message()
+                print("""*********************MSHG:{}*********************""".format(msg))
+                if ("1231" in msg):
+                    print("NOTIF")
+
                 if msg:
                     self.reader_handle_message(msg)
                     closed = False

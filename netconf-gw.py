@@ -118,13 +118,13 @@ class NetconfMethods (server.NetconfMethods):
 
         print("rpc_get")
 
-        return etree.Element("ok")
+        return etree.Element("ok1")
 
     def rpc_get_config (self, unused_session, rpc, *unused_params):
-        return etree.Element("ok")
+        return etree.Element("ok2")
 
     def rpc_edit_config (self, unused_session, rpc, *unused_params):
-        return etree.Element("ok")
+        return etree.Element("ok3")
 
     def rpc_rpc (self, unused_session, rpc, *unused_params):
         print("Session:{}".format(unused_session))
@@ -135,16 +135,16 @@ class NetconfMethods (server.NetconfMethods):
             print(etree.tostring(x,pretty_print=True))
 
         print("create_subscription")
-        print("Sockets.len{}".format(len(netconf_server.sockets)))
+        print("Sockets.len:{}".format(len(netconf_server.sockets)))
 
 
         global send_now
         send_now =True
 
-        return etree.Element("Received_notification")
+        return etree.Element("Create_Subscription_Received")
 
     def rpc_namespaced (self, unused_session, rpc, *unused_params):
-        return etree.Element("ok")
+        return etree.Element("ok4")
 
 
 
@@ -199,10 +199,7 @@ def setup_netconf():
                                             host_key="keys/host_key",
                                             debug=SERVER_DEBUG)
 
-        print("Sockets.len{}".format(len(netconf_server.sockets)))
-
-
-from netconf import client
+        print("Sockets.len:: {}".format(len(netconf_server.sockets)))
 
 if __name__ == "__main__":
 
@@ -210,34 +207,14 @@ if __name__ == "__main__":
 
     setup_netconf()
 
-    """    print ("2nd")
-
-    session = client.NetconfSSHSession("127.0.0.1",
-                                      username=USER,
-                                      password="admin",
-                                      port=830)
-    assert session
-
-    query = "<get><filter><status/></filter></get>"
-    rval = session.send_rpc(query)
-    assert rval
-    session.close()"""
     print("Listening Netconf")
     while True:
-        time.sleep(1)
+        time.sleep(5)
         sys.stdout.write(".")
         sys.stdout.flush()
         if send_now:
             netconf_server.trigger_notification()
+            #send_now=False
 
 
 
-#   setup_snmp()
-
-    #Create nc thread
-#    netconf_thread = threading.Thread(target=netconf_loop, name="Netconf Thread")
-
-
-    #Trigger snmp walk to fetch alarms from FGT
-
-#    netconf_thread.start()
