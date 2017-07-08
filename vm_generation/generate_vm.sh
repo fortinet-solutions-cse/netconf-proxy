@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 
+set -x
 
-export UBUNTU_IMAGE_URL=https://cloud-images.ubuntu.com/releases/14.04/release/ubuntu-14.04-server-cloudimg-amd64-disk1.img
+export UBUNTU_IMAGE_URL=https://cloud-images.ubuntu.com/releases/16.04/release/ubuntu-16.04-server-cloudimg-amd64-disk1.img
 export UBUNTU_IMAGE_NAME=$(basename ${UBUNTU_IMAGE_URL})
+
+virsh destroy snmp_netconf
+virsh undefine snmp_netconf
+rm -f snmp_netconf.img
 
 # *******************************
 # Get Ubuntu 16.04 as base image
@@ -23,7 +28,22 @@ cp ${UBUNTU_IMAGE_NAME} snmp_netconf.img
 # Install
 # *******************************
 
+#sudo guestfish -a snmp_netconf.img --rw -i upload ../init/snmp-netconf.conf /etc/init/snmp-netconf.conf
+#sudo guestfish -a snmp_netconf.img --rw -i upload ../netconf-gw.py /opt/netconf-gw.py
+#sudo guestfish -a snmp_netconf.img --rw -i upload ../netconf-gw.py /opt/netconf-gw.py
 
+
+mkdir -p /tmp/guest_snmp/
+sudo guestmount /tmp/guest_snmp/ -a snmp_netconf.img -m /dev/sda1
+
+
+sudo rsync -r -v --max-size=32768 ../*  /tmp/guest_snmp/opt/
+
+
+
+#sudo cp -r ../* /tmp/guest_snmp/opt/
+sudo cp ../init/snmp-netconf.conf /tmp/guest_snmp/etc/init/
+sudo guestunmount /tmp/guest_snmp/
 
 
 
@@ -31,4 +51,39 @@ cp ${UBUNTU_IMAGE_NAME} snmp_netconf.img
 # Test the VM
 # *******************************
 
-virt-install --connect qemu:///system --noautoconsole --filesystem ${PWD},shared_dir --import --name snmp_netconf.img --ram 2048 --vcpus 1 --disk ${CLASSIFIER1_NAME}.img,size=3 --disk ${CLASSIFIER1_NAME}-cidata.iso,device=cdrom --network bridge=virbr1,mac=${CLASSIFIER1_MAC}
+cat >meta-data <<EOF
+instance-id: ${CLASSIFIER1_NAME}
+local-hostname: ${CLASSIFIER1_NAME}
+EOF
+
+cat >user-data <<EOF
+#cloud-config
+users:
+  - name: ${USER}
+    gecos: Host User Replicated
+    passwd: 4096$WZV/rmpx9X$M0ZfYfQookX7TXTBf64j31kvRZu3HNPESAVpv8B61qVW89oI86HB2Ihs9pAUrHTvnigdgvUJdBoAaLSG2L0Vi0
+    ssh-authorized-keys:
+      - $(cat ${HOME}/.ssh/id_rsa.pub)
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+EOF
+
+rm -rf snmp_netconf-cidata.iso
+genisoimage -output snmp_netconf-cidata.iso -volid cidata -joliet -rock user-data meta-data
+
+sudo virt-sysprep -a snmp_netconf.img --hostname snmp_netconf --firstboot-command 'sudo apt-get install -y python-pip;sudo apt-get update --fix-missing;sudo apt-get install -y python-pip python-lxml python-paramiko;sudo pip install pysnmp'
+
+virt-install --connect qemu:///system --noautoconsole --filesystem ${PWD},shared_dir --import --name snmp_netconf --disk snmp_netconf-cidata.iso,device=cdrom --ram 2048 --vcpus 1 --disk snmp_netconf.img,size=3
+
+
+
+
+exit 0
+
+
+sudo apt-get install python-pip
+sudo pip install pysnmp
+
+
+
+permisos de ejecucion
