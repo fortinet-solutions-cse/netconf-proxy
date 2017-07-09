@@ -8,6 +8,9 @@ export UBUNTU_IMAGE_NAME=$(basename ${UBUNTU_IMAGE_URL})
 virsh destroy snmp_netconf
 virsh undefine snmp_netconf
 rm -f snmp_netconf.img
+rm -f user-data
+rm -f meta-data
+rm -f snmp_netconf-cidata.iso
 
 # *******************************
 # Get Ubuntu 16.04 as base image
@@ -52,8 +55,8 @@ sudo guestunmount /tmp/guest_snmp/
 # *******************************
 
 cat >meta-data <<EOF
-instance-id: ${CLASSIFIER1_NAME}
-local-hostname: ${CLASSIFIER1_NAME}
+instance-id: snmp_netconf
+local-hostname: snmp_netconf
 EOF
 
 cat >user-data <<EOF
@@ -71,19 +74,35 @@ EOF
 rm -rf snmp_netconf-cidata.iso
 genisoimage -output snmp_netconf-cidata.iso -volid cidata -joliet -rock user-data meta-data
 
-sudo virt-sysprep -a snmp_netconf.img --hostname snmp_netconf --firstboot-command 'sudo apt-get install -y python-pip;sudo apt-get update --fix-missing;sudo apt-get install -y python-pip python-lxml python-paramiko;sudo pip install pysnmp'
+sudo virt-sysprep -a snmp_netconf.img --hostname snmp_netconf --firstboot-command 'sudo apt-get update ; sudo apt-get install -y python-pip python-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg8-dev zlib1g-dev ; sudo pip install paramiko pysnmp lxml '
+
+#;sudo apt-get update --fix-missing;sudo apt-get install -y python-pip python-lxml python-paramiko;sudo pip install pysnmp'
 
 virt-install --connect qemu:///system --noautoconsole --filesystem ${PWD},shared_dir --import --name snmp_netconf --disk snmp_netconf-cidata.iso,device=cdrom --ram 2048 --vcpus 1 --disk snmp_netconf.img,size=3
 
 
+sleep 180
 
+
+virsh destroy snmp_netconf
+
+sleep 45
+
+cp snmp_netconf.img delivery.img
+cp snmp_netconf-cidata.iso delivery-cidata.iso
+
+sudo virt-sysprep -a delivery.img --root-password password:m \
+    --delete /var/lib/cloud/* \
+    --firstboot-command 'useradd -m -p "" vagrant ; chage -d 0 vagrant; ssh-keygen -A; rm -rf /var/lib/cloud/*; cloud-init init'
+
+
+virt-install --connect qemu:///system --noautoconsole --filesystem ${PWD},shared_dir --import --name delivery.img --ram 2048 --vcpus 1  --disk delivery.img,size=3 --disk delivery-cidata.iso,device=cdrom
 
 exit 0
 
 
-sudo apt-get install python-pip
-sudo pip install pysnmp
 
 
 
-permisos de ejecucion
+
+ssh $(arp -a|grep 122|cut -d"(" -f2|cut -d")" -f1)

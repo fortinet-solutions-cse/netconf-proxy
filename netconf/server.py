@@ -470,7 +470,7 @@ class NetconfSSHServer (sshutil.server.SSHServer):
         for sckt in self.sockets:
             for session in sckt.sessions:
                 if session.is_active():
-                    session.send_message("<notification><eventTime>1231</eventTime></notification>")
+                    session.send_message("<notification><eventTime>test1231</eventTime></notification>")
 
 
 
