@@ -466,7 +466,7 @@ class NetconfSSHServer (sshutil.server.SSHServer):
 
 
     def trigger_notification(self):
-        print ("Sending Notification")
+        logger.info("Notifications triggered")
         for sckt in self.sockets:
             for session in sckt.sessions:
                 if session.is_active():

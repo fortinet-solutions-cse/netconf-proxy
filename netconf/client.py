@@ -149,7 +149,7 @@ class NetconfClientSession (NetconfSession):
             if not notification:
                 raise SessionError(msg, "No rpc-reply or notification found")
             else:
-                print("ççççççççççççççççççççççççççNOTIF received")
+                logger.info("* NOTIF received *")
                 return
 
         for reply in replies:

@@ -358,9 +358,6 @@ class NetconfSession (object):
                     assert pkt_stream is not None
 
                 msg = self._receive_message()
-                print("""*********************MSHG:{}*********************""".format(msg))
-                if ("1231" in msg):
-                    print("NOTIF")
 
                 if msg:
                     self.reader_handle_message(msg)

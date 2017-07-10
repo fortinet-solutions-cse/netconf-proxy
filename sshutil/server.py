@@ -455,7 +455,7 @@ class SSHServer (object):
                     proto_sock.close()
 
                     # Close our closing socket.
-                    if self.debug:
+                    if self.debug:d
                         logger.debug("%s: closing close socket %s",
                                      str(self),
                                      str(self.close_rsocket))

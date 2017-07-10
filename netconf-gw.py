@@ -39,11 +39,13 @@ except ImportError:
 
 netconf_server = None
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 SERVER_DEBUG = True
 NC_PORT = 830
 USER="m"
 PASSWORD="admin"
+SERVER_DEBUG = logger.getEffectiveLevel() == logging.DEBUG
+print("SERVER_DEBUG:"+str(SERVER_DEBUG))
 
 # **********************************
 # General SNMP functions
@@ -154,7 +156,7 @@ class NetconfMethods (server.NetconfMethods):
         logger.debug("RPC received:{}".format(etree.tostring(rpc,pretty_print=True)))
 
         for x in unused_params:
-            logger.debug(etree.tostring(x,pretty_print=True))
+            logger.debug("Param:" + etree.tostring(x,pretty_print=True))
 
         return etree.Element("ok")
 
