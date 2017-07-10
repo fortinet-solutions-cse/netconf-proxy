@@ -1,0 +1,13 @@
+[Unit]
+Description=Snmp to netconf Proxy
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt
+ExecStart=/opt/netconf-gw.py > /var/log/snmp-netconf.log
+Restart=always
+
+
+[Install]
+WantedBy=multi-user.target
