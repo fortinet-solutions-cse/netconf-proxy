@@ -39,10 +39,11 @@ except ImportError:
 
 netconf_server = None
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 SERVER_DEBUG = True
 NC_PORT = 830
 USER="m"
+PASSWORD="admin"
 
 # **********************************
 # General SNMP functions
@@ -102,9 +103,9 @@ send_now=False
 
 class NetconfMethods (server.NetconfMethods):
 
-    def nc_append_capabilities (self, capabilities):        # pylint: disable=W0613
+    def nc_append_capabilities (self, capabilities_answered):        # pylint: disable=W0613
 
-        caps = ["urn:ietf:params:netconf:capability:writable - running:1.0",
+        capability_list = ["urn:ietf:params:netconf:capability:writable - running:1.0",
                 "urn:ietf:params:netconf:capability:interleave:1.0",
                 "urn:ietf:params:netconf:capability:notification:1.0",
                 "urn:ietf:params:netconf:capability:validate:1.0",
@@ -124,11 +125,10 @@ class NetconfMethods (server.NetconfMethods):
                 "urn:ietf:params:xml:ns:yang:ietf-yang-types?module=ietf-yang-types&amp;revision=2013-07-15",
                 "urn:ietf:params:xml:ns:yang:ietf-inet-types?module=ietf-inet-types&amp;revision=2013-07-15"]
 
-        for cap in caps:
+        for cap in capability_list:
             elem=etree.Element("capability")
             elem.text=cap
-            capabilities.append(elem)
-
+            capabilities_answered.append(elem)
         return
 
     def rpc_get (self, unused_session, rpc, *unused_params):
@@ -163,8 +163,7 @@ class NetconfMethods (server.NetconfMethods):
         return etree.Element("ok")
 
 def netconf_loop():
-
-    print("nc")
+    logger.info("Netconf Loop")
 
     return
 
@@ -203,18 +202,17 @@ def setup_netconf():
         logger.error("Netconf Server is already up and running")
     else:
         server_ctl = server.SSHUserPassController(username=USER,
-                                                  password="admin")
+                                                  password=PASSWORD)
         netconf_server = server.NetconfSSHServer(server_ctl=server_ctl,
                                             server_methods=NetconfMethods(),
                                             port=NC_PORT,
                                             host_key="keys/host_key",
                                             debug=SERVER_DEBUG)
 
-        print("Sockets.len:: {}".format(len(netconf_server.sockets)))
-
 if __name__ == "__main__":
 
     global send_now
+    global netconf_server
 
     setup_netconf()
 
@@ -225,7 +223,6 @@ if __name__ == "__main__":
         sys.stdout.flush()
         if send_now:
             netconf_server.trigger_notification()
-            #send_now=False
 
 
 
