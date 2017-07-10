@@ -2,6 +2,7 @@
 
 from netconf import client
 import time
+import logging
 import sys
 
 def test_basic_get():
@@ -45,9 +46,16 @@ def test_create_subscription():
     print(rval)
     assert rval
 
-    time.sleep(5)
-    sys.stdout.write(".")
-    sys.stdout.flush()
+
+
+def test_create_subscription_and_receive_notif():
+
+    session = client.NetconfSSHSession("127.0.0.1",
+                                       username="m",
+                                       password="admin",
+                                       port=830,
+                                       debug=True)
+    assert session
 
 
     query = """<nc:rpc xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:message-id="2">
@@ -79,4 +87,10 @@ def test_create_subscription():
 
 if __name__ == "__main__":
 
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=logging.DEBUG)
+
+
+    test_basic_get()
     test_create_subscription()
+    test_create_subscription_and_receive_notif()
