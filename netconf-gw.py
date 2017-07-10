@@ -39,14 +39,14 @@ except ImportError:
 
 netconf_server = None
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 SERVER_DEBUG = True
 NC_PORT = 830
 USER="m"
 
 # **********************************
-# General functions
+# General SNMP functions
 # **********************************
-
 
 def snmpTrapReceiver(transportDispatcher, transportDomain, transportAddress, wholeMsg):
     while wholeMsg:
@@ -94,60 +94,73 @@ def snmpTrapReceiver(transportDispatcher, transportDomain, transportAddress, who
                 print('%s = %s' % (oid, val))
     return wholeMsg
 
+# **********************************
+# General Netconf functions
+# **********************************
 
 send_now=False
 
-
 class NetconfMethods (server.NetconfMethods):
+
     def nc_append_capabilities (self, capabilities):        # pylint: disable=W0613
-        #capabilities.append(etree.Element("urn:ietf:params:netconf:base:1.0"));
-        cap = etree.Element("capability")
-        cap.text="urn:ietf:params:netconf:capability:notification:1.0"
-        capabilities.append( cap )
-        cap = etree.Element("capability")
-        cap.text="urn:samsung:vnf-alarm-interface?module=vnf-alarm-interface&amp;revision=2016-07-08"
-        capabilities.append( cap )
-        print("hello************************************")
+
+        caps = ["urn:ietf:params:netconf:capability:writable - running:1.0",
+                "urn:ietf:params:netconf:capability:interleave:1.0",
+                "urn:ietf:params:netconf:capability:notification:1.0",
+                "urn:ietf:params:netconf:capability:validate:1.0",
+                "urn:samsung:vnf-deploy-interface?module=vnf-deploy-interface&amp;revision=2016-05-15",
+                "urn:samsung:vnf-alarm-interface?module=vnf-alarm-interface&amp;revision=2016-07-08",
+                "urn:samsung:samsung-types?module=samsung-types&amp;revision=2016-05-15",
+                "urn:cesnet:tmc:netopeer:1.0?module=netopeer-cfgnetopeer&amp;revision=2015-05-19&amp;features=ssh,dynamic-modules",
+                "urn:ietf:params:xml:ns:yang:ietf-netconf-server?module=ietf-netconf-server&amp;revision=2014-01-24&amp;features=ssh,inbound-ssh,outbound-ssh",
+                "urn:ietf:params:xml:ns:yang:ietf-x509-cert-to-name?module=ietf-x509-cert-to-name&amp;revision=2013-03-26",
+                "urn:ietf:params:xml:ns:yang:ietf-netconf-acm?module=ietf-netconf-acm&amp;revision=2012-02-22",
+                "urn:ietf:params:xml:ns:yang:ietf-netconf-with-defaults?module=ietf-netconf-with-defaults&amp;revision=2010-06-09",
+                "urn:ietf:params:xml:ns:netconf:notification:1.0?module=notifications&amp;revision=2008-07-14",
+                "urn:ietf:params:xml:ns:netmod:notification?module=nc-notifications&amp;revision=2008-07-14",
+                "urn:ietf:params:xml:ns:yang:ietf-netconf-notifications?module=ietf-netconf-notifications&amp;revision=2012-02-06",
+                "urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring?module=ietf-netconf-monitoring&amp;revision=2010-10-04",
+                "urn:ietf:params:xml:ns:netconf:base:1.0?module=ietf-netconf&amp;revision=2011-03-08&amp;features=validate",
+                "urn:ietf:params:xml:ns:yang:ietf-yang-types?module=ietf-yang-types&amp;revision=2013-07-15",
+                "urn:ietf:params:xml:ns:yang:ietf-inet-types?module=ietf-inet-types&amp;revision=2013-07-15"]
+
+        for cap in caps:
+            elem=etree.Element("capability")
+            elem.text=cap
+            capabilities.append(elem)
+
         return
 
     def rpc_get (self, unused_session, rpc, *unused_params):
-
-
-        for x in unused_params:
-            print(x)
-
-        print("rpc_get")
-
-        return etree.Element("ok1")
+        logger.info("rpc_get")
+        return etree.Element("ok")
 
     def rpc_get_config (self, unused_session, rpc, *unused_params):
-        return etree.Element("ok2")
+        logger.info("rpc_get_config")
+        return etree.Element("ok")
 
     def rpc_edit_config (self, unused_session, rpc, *unused_params):
-        return etree.Element("ok3")
+        logger.info("rpc_edit_config")
+        return etree.Element("ok")
 
     def rpc_rpc (self, unused_session, rpc, *unused_params):
-        print("Session:{}".format(unused_session))
-        print("RPC:{}".format(rpc))
-        print(etree.tostring(rpc,pretty_print=True))
-        for x in unused_params:
-            print(x)
-            print(etree.tostring(x,pretty_print=True))
 
-        print("create_subscription")
-        print("Sockets.len:{}".format(len(netconf_server.sockets)))
-
+        logger.info("rpc_create-subscription")
 
         global send_now
         send_now =True
 
-        return etree.Element("Create_Subscription_Received")
+        logger.debug("Session:{}".format(unused_session))
+        logger.debug("RPC received:{}".format(etree.tostring(rpc,pretty_print=True)))
+
+        for x in unused_params:
+            logger.debug(etree.tostring(x,pretty_print=True))
+
+        return etree.Element("ok")
 
     def rpc_namespaced (self, unused_session, rpc, *unused_params):
-        return etree.Element("ok4")
-
-
-
+        logger.info("rpc_namespaced")
+        return etree.Element("ok")
 
 def netconf_loop():
 
@@ -186,8 +199,6 @@ def setup_netconf():
 
     global netconf_server
 
-    logging.basicConfig(level=logging.INFO)
-
     if netconf_server is not None:
         logger.error("Netconf Server is already up and running")
     else:
@@ -207,7 +218,7 @@ if __name__ == "__main__":
 
     setup_netconf()
 
-    print("Listening Netconf")
+    logger.info("Listening Netconf")
     while True:
         time.sleep(5)
         sys.stdout.write(".")
