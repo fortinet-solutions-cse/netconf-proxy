@@ -1,0 +1,14 @@
+This work is licensed under Apache2 license as stated in LICENSE file.
+
+It includes libraries taken from :
+  netconf 0.5.1
+  https://pypi.python.org/pypi/netconf
+
+  sshutil 1.1.0
+  https://pypi.python.org/pypi/sshutil/1.1.0
+
+
+The reason why these libraries have been included in this repo is to perform modification in place aiming to add
+support for Netconf notifications.
+The initial libraries did not contain netconf subscription/notification capabilities.
+

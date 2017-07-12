@@ -1,0 +1,18 @@
+v0.2
+
+- Netconf process deployed as systemd service (automated and resilient to crashes)
+- Capabilities returned according to specs
+- <create_subscription> answer is now according to specs
+- Improved logs and output
+
+v0.1
+
+- Netconf Server that has to be started manually on "/opt/netconf-gw.py"
+- Server listens on port 830 for Netconf
+- Server is able to respond hello with basic capabilities
+- Server is able to respond to basic 'create subscription' message
+- Server emits a fake notification every 5 seconds to those clients that requested subscription
+- Note it does not listen to SNMP yet
+- Expect custom netconf tags and debug info in the answers. E.g. you can receive '<ok1>' instead of '<ok>'
+
+
