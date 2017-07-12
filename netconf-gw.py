@@ -1,16 +1,23 @@
 #!/usr/bin/sudo python
-from __future__ import absolute_import, division, unicode_literals, print_function, nested_scopes
+
+#************************************************
+# Netconf Servcer with SNMP listening capabilities
+#
+# Use: ./netconf-gw.py
+#
+# Miguel Angel Muñoz Gonzalez
+# magonzalez(at)fortinet.com
+#
+#************************************************
 
 # **********************************
 # Requires following modules
 # TODO: use requirements.txt
 # sudo pip install pysnmp
-# sudo pip install netconf
 # **********************************
 
+from __future__ import absolute_import, division, unicode_literals, print_function, nested_scopes
 import logging
-import time
-import sys
 
 # **********************************
 # SNMP imports
@@ -52,6 +59,8 @@ print("SERVER_DEBUG:"+str(SERVER_DEBUG))
 # **********************************
 
 def snmpTrapReceiver(transportDispatcher, transportDomain, transportAddress, wholeMsg):
+    global netconf_server
+
     while wholeMsg:
         msgVer = int(api.decodeMessageVersion(wholeMsg))
         if msgVer in api.protoModules:
@@ -95,13 +104,48 @@ def snmpTrapReceiver(transportDispatcher, transportDomain, transportAddress, who
             print('Var-binds:')
             for oid, val in varBinds:
                 print('%s = %s' % (oid, val))
+
+            #TODO: Missing mapping from SNMP to Netconf Values
+
+
+            values = { "time":"2016-12-13T22:32:58Z", \
+                       "systemdn":"fd19:bcb8:3cb5:2000::c0a8:8201",\
+                       "alarmgroup":"EQUIPMENT_ALARM",\
+                       "alarmtype":"FF",\
+                       "alarmseverity":"major",\
+                       "alarminfo":"-",\
+                       "alarmlocation":"FUPC0",\
+                       "alarmcode":"1502",\
+                       "objectid":"7401f9d7-2d5e-4cfe-8ae1-d2adebf085fb",\
+                       "objecttype":"VNF Component",\
+                       "sequencenumber":"0",\
+                       "notificationtype":"NotifyClearedAlarm"}
+
+            notif="""<notification xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0">"""\
+                  """<eventTime>%(time)s</eventTime>""" \
+                  """<vnf-alarm xmlns="urn:samsung:vnf-alarm-interface">""" \
+                  """<event-time>%(time)s</event-time>""" \
+                  """<system-dn>%(systemdn)s</system-dn>""" \
+                  """<alarm-group>%(alarmgroup)s</alarm-group>""" \
+                  """<alarm-type>%(alarmtype)s</alarm-type>""" \
+                  """<alarm-severity>%(alarmseverity)s</alarm-severity>""" \
+                  """<alarm-info>%(alarminfo)s</alarm-info>""" \
+                  """<alarm-location>%(alarmlocation)s</alarm-location>""" \
+                  """<alarm-code>%(alarmcode)s</alarm-code>""" \
+                  """<object-id>%(objectid)s</object-id>""" \
+                  """<object-type>%(objecttype)s</object-type>""" \
+                  """<sequence-number>%(sequencenumber)s</sequence-number>""" \
+                  """<notification-type>%(notificationtype)s</notification-type>""" \
+                  """</vnf-alarm>""" \
+                  """</notification>""" % values;
+
+            netconf_server.trigger_notification(notif)
+
     return wholeMsg
 
 # **********************************
 # General Netconf functions
 # **********************************
-
-send_now=False
 
 class NetconfMethods (server.NetconfMethods):
 
@@ -149,9 +193,6 @@ class NetconfMethods (server.NetconfMethods):
 
         logger.info("rpc_create-subscription")
 
-        global send_now
-        send_now =True
-
         logger.debug("Session:{}".format(unused_session))
         logger.debug("RPC received:{}".format(etree.tostring(rpc,pretty_print=True)))
 
@@ -164,12 +205,9 @@ class NetconfMethods (server.NetconfMethods):
         logger.info("rpc_namespaced")
         return etree.Element("ok")
 
-def netconf_loop():
-    logger.info("Netconf Loop")
-
-    return
-
-
+# **********************************
+# Setup SNMP
+# **********************************
 def setup_snmp():
 
     transportDispatcher = AsynsockDispatcher()
@@ -196,6 +234,9 @@ def setup_snmp():
         raise
 
 
+# **********************************
+# Setup Netconf
+# **********************************
 def setup_netconf():
 
     global netconf_server
@@ -213,18 +254,12 @@ def setup_netconf():
 
 if __name__ == "__main__":
 
-    global send_now
     global netconf_server
 
     setup_netconf()
 
-    logger.info("Listening Netconf")
-    while True:
-        time.sleep(5)
-        sys.stdout.write(".")
-        sys.stdout.flush()
-        if send_now:
-            netconf_server.trigger_notification()
-
+    # Start the loop for SNMP / Netconf
+    logger.info("Listening Netconf - Snmp")
+    setup_snmp()
 
 

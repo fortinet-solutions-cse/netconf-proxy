@@ -301,7 +301,7 @@ class NetconfServerSession (base.NetconfSession):
                     # XXX should be RPC-unlocking if need be
                     if self.debug:
                         logger.debug("%s: Received close-session msg-id: %s", str(self), msg_id)
-                    self.send_rpc_reply(etree.Element("okA"), rpc)
+                    self.send_rpc_reply(etree.Element("ok"), rpc)
                     self.close()
                     # XXX should we also call the user method if it exists?
                     return
@@ -309,7 +309,7 @@ class NetconfServerSession (base.NetconfSession):
                     # XXX we are supposed to cleanly abort anything underway
                     if self.debug:
                         logger.debug("%s: Received kill-session msg-id: %s", str(self), msg_id)
-                    self.send_rpc_reply(etree.Element("okK"), rpc)
+                    self.send_rpc_reply(etree.Element("ok"), rpc)
                     self.close()
                     # XXX should we also call the user method if it exists?
                     return
@@ -465,12 +465,12 @@ class NetconfSSHServer (sshutil.server.SSHServer):
             return sid
 
 
-    def trigger_notification(self):
+    def trigger_notification(self, notif):
         logger.info("Notifications triggered")
         for sckt in self.sockets:
             for session in sckt.sessions:
                 if session.is_active():
-                    session.send_message("<notification><eventTime>test1231</eventTime></notification>")
+                    session.send_message(notif)
 
 
 

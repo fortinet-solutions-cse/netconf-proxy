@@ -1,9 +1,9 @@
 #!/usr/bin/python
 
 from netconf import client
+from pysnmp.hlapi import *
 import time
 import logging
-import sys
 
 def test_basic_get():
     session = client.NetconfSSHSession("127.0.0.1",
@@ -20,9 +20,8 @@ def test_basic_get():
     assert rval
     session.close()
 
+
 def test_create_subscription():
-
-
     session = client.NetconfSSHSession("127.0.0.1",
                                        username="m",
                                        password="admin",
@@ -40,23 +39,19 @@ def test_create_subscription():
   </ncn:create-subscription>
 </nc:rpc>"""
 
-    #print(session.capabilities)
     rval = session.send_rpc(query)
 
     print(rval)
     assert rval
 
 
-
-def test_create_subscription_and_receive_notif():
-
+def test_create_subscription_and_wait_for_notif():
     session = client.NetconfSSHSession("127.0.0.1",
                                        username="m",
                                        password="admin",
                                        port=830,
                                        debug=True)
     assert session
-
 
     query = """<nc:rpc xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:message-id="2">
       <ncn:create-subscription xmlns:ncn="urn:ietf:params:xml:ns:netconf:notification:1.0">
@@ -74,23 +69,39 @@ def test_create_subscription_and_receive_notif():
     print(rval)
     assert rval
 
-    while True:
-        time.sleep(1)
-        sys.stdout.write(".")
-        sys.stdout.flush()
+    time.sleep(10)
 
+    # You can also use:
+    # snmptrap -v1 -c public 127.0.0.1 1.3.6.1.4.1.20408.4.1.1.2 127.0.0.1 1 1 123 1.3.6.1.2.1.1.1.0 s test
+
+    errorIndication, errorStatus, errorIndex, varBinds = next(
+        sendNotification(
+            SnmpEngine(),
+            CommunityData('public', mpModel=0),
+            UdpTransportTarget(('127.0.0.1', 162)),
+            ContextData(),
+            'trap',
+            NotificationType(
+                ObjectIdentity('1.3.6.1.6.3.1.1.5.2')
+            ).addVarBinds(
+                ('1.3.6.1.6.3.1.1.4.3.0', '1.3.6.1.4.1.20408.4.1.1.2'),
+                ('1.3.6.1.2.1.1.1.0', OctetString('my system'))
+            )
+        )
+    )
+
+    if errorIndication:
+        print(errorIndication)
+
+    time.sleep(2)
 
     session.close()
 
 
-
-
 if __name__ == "__main__":
-
     logger = logging.getLogger(__name__)
     logging.basicConfig(level=logging.DEBUG)
 
-
-    test_basic_get()
-    test_create_subscription()
-    test_create_subscription_and_receive_notif()
+    # test_basic_get()
+    # test_create_subscription()
+    test_create_subscription_and_wait_for_notif()
