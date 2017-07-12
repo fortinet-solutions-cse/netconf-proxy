@@ -433,6 +433,10 @@ class NetconfMethods (object):
     def rpc_unlock (self, unused_session, rpc, *unused_params):
         raise ncerror.RPCSvrErrNotImpl(rpc)
 
+    # XXX The API WILL CHANGE consider unfinished
+    def rpc_rpc(self, unused_session, rpc, *unused_params):
+        raise ncerror.RPCSvrErrNotImpl(rpc)
+
 
 class NetconfSSHServer (sshutil.server.SSHServer):
     """A netconf server"""
