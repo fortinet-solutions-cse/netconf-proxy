@@ -1,3 +1,8 @@
+v0.3
+
+ - It is now able to listen to SNMP traps and trigger a Netconf notif to those clients subscribed
+ - Data sent on Netconf notification is always the same (pending to receive mapping info from SNMP-Netconf fields)
+
 v0.2
 
 - Netconf process deployed as systemd service (automated and resilient to crashes)
