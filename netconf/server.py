@@ -280,7 +280,8 @@ class NetconfServerSession (base.NetconfSession):
 
             try:
                 # Get the first child of rpc as the method name
-                rpc_method = rpc.getchildren()
+                rpc_method = list(rpc)
+                rpc_method = rpc_method[0]
                 if len(rpc_method) != 1:
                     if self.debug:
                         logger.debug("%s: Bad Msg: msg-id: %s", str(self), msg_id)

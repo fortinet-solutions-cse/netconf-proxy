@@ -188,14 +188,18 @@ class NetconfMethods(server.NetconfMethods):
         return etree.Element("ok")
 
     def rpc_get_config(self, unused_session, rpc, *unused_params):
+
+        data = etree.Element("data")
+        vnfi = etree.Element("vnfi")
+        data.append(vnfi)
         logger.info("rpc_get_config")
-        return etree.Element("ok")
+        return data
 
     def rpc_edit_config(self, unused_session, rpc, *unused_params):
         logger.info("rpc_edit_config")
         return etree.Element("ok")
 
-    def rpc_rpc(self, unused_session, rpc, *unused_params):
+    def rpc_create_subscription(self, unused_session, rpc, *unused_params):
 
         logger.info("rpc_create-subscription")
 

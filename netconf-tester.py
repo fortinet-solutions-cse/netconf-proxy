@@ -97,6 +97,22 @@ def test_create_subscription_and_wait_for_notif():
 
     session.close()
 
+def test_get_config():
+    session = client.NetconfSSHSession("127.0.0.1",
+                                       username="m",
+                                       password="admin",
+                                       port=830,
+                                       debug=True)
+    assert session
+
+    query = """<nc:rpc xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:message-id="1"><nc:get-config><nc:source><nc:running/></nc:source><nc:filter nc:type="subtree"><vnfi xmlns="urn:samsung:vnf-alarm-interface" xmlns:vaintf="urn:samsung:vnf-alarm-interface"/></nc:filter></nc:get-config></nc:rpc>"""
+
+    rval = session.send_rpc(query)
+
+    print(rval)
+    assert rval
+
+
 
 if __name__ == "__main__":
     logger = logging.getLogger(__name__)
@@ -105,3 +121,5 @@ if __name__ == "__main__":
     # test_basic_get()
     # test_create_subscription()
     test_create_subscription_and_wait_for_notif()
+    #test_get_config()
+
