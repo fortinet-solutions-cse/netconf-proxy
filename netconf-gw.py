@@ -20,6 +20,9 @@
 
 from __future__ import absolute_import, division, unicode_literals, print_function, nested_scopes
 import logging
+import re
+import subprocess
+import shlex
 
 # **********************************
 # SNMP imports
@@ -266,7 +269,27 @@ def setup_netconf():
                                                  host_key="keys/host_key",
                                                  debug=SERVER_DEBUG)
 
+def set_ip_from_metajs():
+
+    """Sets ip according to content in /meta.js file"""
+
+    f = open("/meta.js", "r")
+    metajs = f.read()
+    f.close()
+
+    matched = re.search(""""VNF_IP_ADDR": "([0-9\.]*)""""", metajs)
+    ip_address = matched.group(1)
+    device = "wlp61s0"
+
+    logger.info("Changing ip: "+ip_address+" on device: "+device)
+
+    subprocess.call(shlex.split("ifconfig " + device + " 0.0.0.0"))
+    subprocess.call(shlex.split("ip addr add local " + ip_address + "/24 broadcast 192.168.1.255 dev " + device))
+
+
 if __name__ == "__main__":
+
+    set_ip_from_metajs()
 
     setup_netconf()
 

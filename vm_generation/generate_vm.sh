@@ -67,7 +67,7 @@ instance-id: snmp_netconf
 local-hostname: snmp_netconf
 EOF
 
-#Note password hash is 'm'
+#Note password hashed below is 'm'
 
 cat >user-data <<EOF
 #cloud-config
