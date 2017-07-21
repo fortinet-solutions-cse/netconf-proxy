@@ -18,19 +18,7 @@ set -x
 export UBUNTU_IMAGE_URL=https://cloud-images.ubuntu.com/releases/16.04/release/ubuntu-16.04-server-cloudimg-amd64-disk1.img
 export UBUNTU_IMAGE_NAME=$(basename ${UBUNTU_IMAGE_URL})
 
-virsh destroy snmp_netconf
-virsh undefine snmp_netconf
-virsh destroy delivery
-virsh undefine delivery
-
-rm -f snmp_netconf.img
-rm -f snmp_netconf-cidata.iso
-rm -f user-data
-rm -f meta-data
-rm -f install_script
-rm -f install_script_for_delivery
-rm -f delivery.img
-rm -f delivery-cidata.iso
+./clean.sh
 
 #************************************************
 # Get Ubuntu 16.04 as base image
@@ -110,7 +98,11 @@ cp /opt/service/snmp-netconf.service /lib/systemd/system/snmp-netconf.service
 echo "** Enabling and starting service.."
 systemctl enable snmp-netconf
 systemctl start snmp-netconf
+echo 'datasource_list: [ None ]' | sudo -s tee /etc/cloud/cloud.cfg.d/90_dpkg.cfg
+sudo dpkg-reconfigure -f noninteractive cloud-init
 EOF
+
+sleep 1
 
 sudo virt-sysprep -a snmp_netconf.img --hostname snmp_netconf --root-password password:m --firstboot install_script
 
@@ -129,7 +121,29 @@ done
 
 echo "Server seems to have started properly. Generating final image"
 
-sleep 180
+sleep 100
+
+virsh destroy snmp_netconf
+
+sleep 20
+
+cp snmp_netconf.img delivery_test.img
+
+rm -rf delivery
+mkdir ./delivery
+cp delivery_test.img ./delivery/delivery.img
+echo "Your image is ready on \"delivery/delivery.img\". You can play with .\delivery_test.img on this directory"
+
+exit 0
+
+
+#************************************************
+# Bonus: Run this to test VM
+#************************************************
+virsh undefine snmp_netconf
+virt-install --connect qemu:///system --noautoconsole --filesystem ${PWD},shared_dir --import --name delivery --ram 2048 --vcpus 1  --disk delivery_test.img,size=3  --network network=default,mac="08:00:27:4c:10:10"
+
+
 
 virsh destroy snmp_netconf
 
@@ -150,6 +164,14 @@ EOF
 sudo virt-sysprep -a delivery.img --root-password password:m \
     --delete /var/lib/cloud/* \
     --firstboot install_script_for_delivery
+
+rm -rf delivery\
+mkdir ./delivery\
+cp delivery.img .\delivery\delivery.img
+cp delivery-cidata.iso .\delivery\delivery-cidata.iso
+echo "Your image is ready on \"delivery\" directory. You can play with delivery.img on this directory"
+
+
 
 exit 0
 

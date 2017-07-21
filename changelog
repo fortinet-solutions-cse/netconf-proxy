@@ -1,3 +1,9 @@
+v0.5
+
+ - Cloud Init support removed as it is not needed by Samsung
+ - VM does not take so long when CloudInit drive is not present
+ - Name of ethernet device is fetched dynamically
+ 
 v0.4
 
  - Ip address is taken from /meta.js file and set on every boot after netconf process is started.

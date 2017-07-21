@@ -20,6 +20,7 @@
 
 from __future__ import absolute_import, division, unicode_literals, print_function, nested_scopes
 import logging
+import os
 import re
 import subprocess
 import shlex
@@ -276,12 +277,20 @@ def set_ip_from_metajs():
     metajs = f.read()
     f.close()
 
+    # get ip address
     matched = re.search(""""VNF_IP_ADDR": "([0-9\.]*)""""", metajs)
     ip_address = matched.group(1)
-    device = "ens4"
+
+    # get ip device
+    devices = os.listdir("/sys/class/net/")
+    for dev in devices:
+        match = re.search("ens?", dev)
+        if match:
+            device = dev
 
     logger.info("Changing ip: "+ip_address+" on device: "+device)
 
+    # set ip
     subprocess.call(shlex.split("ifconfig " + device + " 0.0.0.0"))
     subprocess.call(shlex.split("ip addr add local " + ip_address + "/24 broadcast 192.168.1.255 dev " + device))
 
