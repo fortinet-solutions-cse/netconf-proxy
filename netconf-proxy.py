@@ -4,7 +4,7 @@
 #************************************************
 # Netconf Servcer with SNMP listening capabilities
 #
-# Use: ./netconf-gw.py
+# Use: ./netconf-proxy.py
 #
 # Miguel Angel Munoz Gonzalez
 # magonzalez(at)fortinet.com

@@ -94,10 +94,10 @@ sudo apt-get install -y python-pip python-dev libffi-dev libssl-dev libxml2-dev 
 echo "** Installing pip..."
 sudo pip install paramiko pysnmp lxml
 echo "** Copying service file..."
-cp /opt/service/snmp-netconf.service /lib/systemd/system/snmp-netconf.service
+cp /opt/service/netconf-proxy.service /lib/systemd/system/netconf-proxy.service
 echo "** Enabling and starting service.."
-systemctl enable snmp-netconf
-systemctl start snmp-netconf
+systemctl enable netconf-proxy
+systemctl start netconf-proxy
 echo 'datasource_list: [ None ]' | sudo -s tee /etc/cloud/cloud.cfg.d/90_dpkg.cfg
 sudo dpkg-reconfigure -f noninteractive cloud-init
 EOF

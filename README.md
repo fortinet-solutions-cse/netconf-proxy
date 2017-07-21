@@ -4,7 +4,7 @@ This proxy listens both netconf and snmp. It accepts netconf subscriptions and f
 
 
 To start the server run:
--  ./netconf-gw.py 
+-  ./netconf-proxy.py 
    
 To test the server run:
 -   ./netconf-tester.py

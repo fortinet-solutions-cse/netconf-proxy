@@ -1,11 +1,11 @@
 [Unit]
-Description=Snmp to netconf Proxy
+Description=Netconf Proxy listening and transforming SNMP traps
 After=network.target
 
 [Service]
 Type=simple
 WorkingDirectory=/opt
-ExecStart=/opt/netconf-gw.py
+ExecStart=/opt/netconf-proxy.py
 Restart=always
 
 
