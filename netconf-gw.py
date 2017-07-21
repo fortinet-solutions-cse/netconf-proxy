@@ -23,6 +23,8 @@ import logging
 import re
 import subprocess
 import shlex
+import argparse
+
 
 # **********************************
 # SNMP imports
@@ -51,14 +53,11 @@ from netconf import server
 netconf_server = None # pylint: disable=C0103
 
 logger = logging.getLogger(__name__) # pylint: disable=C0103
-logging.basicConfig(level=logging.DEBUG)
 
-SERVER_DEBUG = True
 NC_PORT = 830
 USER = "m"
 PASSWORD = "admin"
-SERVER_DEBUG = logger.getEffectiveLevel() == logging.DEBUG
-print("SERVER_DEBUG:"+str(SERVER_DEBUG))
+SERVER_DEBUG = False
 
 # **********************************
 # General SNMP functions
@@ -279,7 +278,7 @@ def set_ip_from_metajs():
 
     matched = re.search(""""VNF_IP_ADDR": "([0-9\.]*)""""", metajs)
     ip_address = matched.group(1)
-    device = "wlp61s0"
+    device = "ens4"
 
     logger.info("Changing ip: "+ip_address+" on device: "+device)
 
@@ -289,7 +288,24 @@ def set_ip_from_metajs():
 
 if __name__ == "__main__":
 
-    set_ip_from_metajs()
+    parser = argparse.ArgumentParser(description="Netconf Server with SNMP trap listening capabilities")
+    parser.add_argument("-s","--skip_ip_set", action="store_true", help="Do not set ip from /meta.js")
+    parser.add_argument("-d","--debug", action="store_true", help="Activate debug logs")
+    args =  parser.parse_args()
+
+    if not args.skip_ip_set:
+        logger.info("Changing ip address according to /meta.js")
+        set_ip_from_metajs()
+    else:
+        logger.info("Ip address not changed")
+
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
+    SERVER_DEBUG = logger.getEffectiveLevel() == logging.DEBUG
+    logger.info("SERVER_DEBUG:" + str(SERVER_DEBUG))
 
     setup_netconf()
 

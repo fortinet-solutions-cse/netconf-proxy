@@ -55,6 +55,7 @@ mkdir -p /tmp/guest_snmp/
 sudo guestmount /tmp/guest_snmp/ -a snmp_netconf.img -m /dev/sda1
 
 sudo rsync -r -v --max-size=32768 ../*  /tmp/guest_snmp/opt/
+sudo rsync -r -v meta.js  /tmp/guest_snmp/
 
 sudo guestunmount /tmp/guest_snmp/
 
@@ -99,11 +100,14 @@ rm -rf snmp_netconf-cidata.iso
 genisoimage -output snmp_netconf-cidata.iso -volid cidata -joliet -rock user-data meta-data
 
 cat >install_script << EOF
-#!/bin/bash
+echo "** Updating system..."
 sudo apt-get update
 sudo apt-get install -y python-pip python-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg8-dev zlib1g-dev
+echo "** Installing pip..."
 sudo pip install paramiko pysnmp lxml
+echo "** Copying service file..."
 cp /opt/service/snmp-netconf.service /lib/systemd/system/snmp-netconf.service
+echo "** Enabling and starting service.."
 systemctl enable snmp-netconf
 systemctl start snmp-netconf
 EOF
@@ -114,6 +118,7 @@ virt-install --connect qemu:///system --noautoconsole --filesystem ${PWD},shared
 
 
 host_ip=$(virsh net-dhcp-leases default|grep "08:00:27:4c:10:10" |egrep -Eo "([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*)")
+host_ip="192.168.122.11"
 
 echo "Scanning port 830 on server:"
 until ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $host_ip sudo netstat -puntax|grep ":::830"

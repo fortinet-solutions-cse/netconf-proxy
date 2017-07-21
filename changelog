@@ -1,3 +1,9 @@
+v0.4
+
+ - Ip address is taken from /meta.js file and set on every boot after netconf process is started.
+ - Fixed errors in handling rpc internal call
+ - Fixed error in service redirecting wrong output
+
 v0.3
 
  - It is now able to listen to SNMP traps and trigger a Netconf notif to those clients subscribed
