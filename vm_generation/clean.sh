@@ -1,15 +1,15 @@
 #!/bin/bash
 
-virsh destroy snmp_netconf
-virsh undefine snmp_netconf
+virsh destroy netconf_proxy
+virsh undefine netconf_proxy
 virsh destroy delivery
 virsh undefine delivery
 
-rm -f snmp_netconf.img
-rm -f snmp_netconf-cidata.iso
+rm -f netconf_proxy.img
+rm -f netconf_proxy-cidata.iso
 rm -f user-data
 rm -f meta-data
 rm -f install_script
 rm -f install_script_for_delivery
-rm -f delivery.img
-rm -f delivery-cidata.iso
+rm -f delivery_test.img
+rm -rf delivery

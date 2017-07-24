@@ -33,14 +33,14 @@ if [ ! -e ${UBUNTU_IMAGE_NAME} ]; then
       exit -1
    fi
 fi
-cp ${UBUNTU_IMAGE_NAME} snmp_netconf.img
+cp ${UBUNTU_IMAGE_NAME} netconf_proxy.img
 
 #************************************************
 # Copy netconf server code to image
 #************************************************
 
 mkdir -p /tmp/guest_snmp/
-sudo guestmount /tmp/guest_snmp/ -a snmp_netconf.img -m /dev/sda1
+sudo guestmount /tmp/guest_snmp/ -a netconf_proxy.img -m /dev/sda1
 
 sudo rsync -r -v --max-size=32768 ../*  /tmp/guest_snmp/opt/
 sudo rsync -r -v meta.js  /tmp/guest_snmp/
@@ -52,8 +52,8 @@ sudo guestunmount /tmp/guest_snmp/
 #************************************************
 
 cat >meta-data <<EOF
-instance-id: snmp_netconf
-local-hostname: snmp_netconf
+instance-id: netconf_proxy
+local-hostname: netconf_proxy
 EOF
 
 #Note password hashed below is 'm'
@@ -84,8 +84,8 @@ EOF
 # Start VM and install additional stuff
 #************************************************
 
-rm -rf snmp_netconf-cidata.iso
-genisoimage -output snmp_netconf-cidata.iso -volid cidata -joliet -rock user-data meta-data
+rm -rf netconf_proxy-cidata.iso
+genisoimage -output netconf_proxy-cidata.iso -volid cidata -joliet -rock user-data meta-data
 
 cat >install_script << EOF
 echo "** Updating system..."
@@ -95,18 +95,19 @@ echo "** Installing pip..."
 sudo pip install paramiko pysnmp lxml
 echo "** Copying service file..."
 cp /opt/service/netconf-proxy.service /lib/systemd/system/netconf-proxy.service
-echo "** Enabling and starting service.."
+echo "** Enabling and starting service..."
 systemctl enable netconf-proxy
 systemctl start netconf-proxy
+echo "** Removing Cloud Init Service..."
 echo 'datasource_list: [ None ]' | sudo -s tee /etc/cloud/cloud.cfg.d/90_dpkg.cfg
 sudo dpkg-reconfigure -f noninteractive cloud-init
 EOF
 
 sleep 1
 
-sudo virt-sysprep -a snmp_netconf.img --hostname snmp_netconf --root-password password:m --firstboot install_script
+sudo virt-sysprep -a netconf_proxy.img --hostname netconf_proxy --root-password password:m --firstboot install_script
 
-virt-install --connect qemu:///system --noautoconsole --filesystem ${PWD},shared_dir --import --name snmp_netconf --disk snmp_netconf-cidata.iso,device=cdrom --ram 2048 --vcpus 1 --disk snmp_netconf.img,size=3 --network network=default,mac="08:00:27:4c:10:10"
+virt-install --connect qemu:///system --noautoconsole --filesystem ${PWD},shared_dir --import --name netconf_proxy --ram 2048 --vcpus 1 --disk netconf_proxy.img,size=3 --disk netconf_proxy-cidata.iso,device=cdrom --network network=default,mac="08:00:27:4c:10:10"
 
 
 host_ip=$(virsh net-dhcp-leases default|grep "08:00:27:4c:10:10" |egrep -Eo "([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*)")
@@ -123,11 +124,11 @@ echo "Server seems to have started properly. Generating final image"
 
 sleep 100
 
-virsh destroy snmp_netconf
+virsh destroy netconf_proxy
 
 sleep 20
 
-cp snmp_netconf.img delivery_test.img
+cp netconf_proxy.img delivery_test.img
 
 rm -rf delivery
 mkdir ./delivery
@@ -140,16 +141,16 @@ exit 0
 #************************************************
 # Bonus: Run this to test VM
 #************************************************
-virsh undefine snmp_netconf
-virt-install --connect qemu:///system --noautoconsole --filesystem ${PWD},shared_dir --import --name delivery --ram 2048 --vcpus 1  --disk delivery_test.img,size=3  --network network=default,mac="08:00:27:4c:10:10"
+virsh undefine netconf_proxy
+virt-install --connect qemu:///system --noautoconsole --filesystem ${PWD},shared_dir --import --name delivery --ram 2048 --vcpus 1  --disk delivery_test.img,size=3 --network network=default,mac="08:00:27:4c:10:10"
 
 
 
-virsh destroy snmp_netconf
+virsh destroy netconf_proxy
 
 sleep 20
 
-cp snmp_netconf.img delivery.img
+cp netconf_proxy.img delivery.img
 genisoimage -output delivery-cidata.iso -volid cidata -joliet -rock user-data meta-data
 
 
@@ -181,7 +182,7 @@ exit 0
 # be usable for other system/vim
 #************************************************
 
-virsh undefine snmp_netconf
+virsh undefine netconf_proxy
 virt-install --connect qemu:///system --noautoconsole --filesystem ${PWD},shared_dir --import --name delivery --ram 2048 --vcpus 1  --disk delivery.img,size=3 --disk delivery-cidata.iso,device=cdrom --network network=default,mac="08:00:27:4c:10:10"
 
 
