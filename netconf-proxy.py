@@ -55,6 +55,8 @@ netconf_server = None # pylint: disable=C0103
 
 logger = logging.getLogger(__name__) # pylint: disable=C0103
 
+snmp_traps_store = [] # pylint: disable=C0103
+
 NC_PORT = 830
 USER = "m"
 PASSWORD = "admin"
@@ -130,6 +132,8 @@ def snmp_trap_receiver(transport_dispatcher, transport_domain, transport_address
                     """</vnf-alarm>""" \
                     """</notification>""" % values
 
+            snmp_traps_store.append(values)
+
             netconf_server.trigger_notification(notif)
 
     return whole_msg
@@ -194,7 +198,31 @@ class NetconfMethods(server.NetconfMethods):
 
         data = etree.Element("data")
         vnfi = etree.Element("vnfi")
+        vnfi.set("xmlns","urn:samsung:vnf-alarm-interface")
+
         data.append(vnfi)
+
+        for trap in snmp_traps_store:
+
+            notif = """<vnf-alarm xmlns="urn:samsung:vnf-alarm-interface">""" \
+                    """<event-time>%(time)s</event-time>""" \
+                    """<system-dn>%(systemdn)s</system-dn>""" \
+                    """<alarm-group>%(alarmgroup)s</alarm-group>""" \
+                    """<alarm-type>%(alarmtype)s</alarm-type>""" \
+                    """<alarm-severity>%(alarmseverity)s</alarm-severity>""" \
+                    """<alarm-info>%(alarminfo)s</alarm-info>""" \
+                    """<alarm-location>%(alarmlocation)s</alarm-location>""" \
+                    """<alarm-code>%(alarmcode)s</alarm-code>""" \
+                    """<object-id>%(objectid)s</object-id>""" \
+                    """<object-type>%(objecttype)s</object-type>""" \
+                    """<sequence-number>%(sequencenumber)s</sequence-number>""" \
+                    """<notification-type>%(notificationtype)s</notification-type>""" \
+                    """</vnf-alarm>""" % trap
+
+            trap = etree.fromstring(notif)
+
+            vnfi.append(trap)
+
         logger.info("rpc_get_config")
         return data
 
@@ -302,16 +330,16 @@ if __name__ == "__main__":
     parser.add_argument("-d","--debug", action="store_true", help="Activate debug logs")
     args =  parser.parse_args()
 
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
     if not args.skip_ip_set:
         logger.info("Changing ip address according to /meta.js")
         set_ip_from_metajs()
     else:
         logger.info("Ip address not changed")
-
-    if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.INFO)
 
     SERVER_DEBUG = logger.getEffectiveLevel() == logging.DEBUG
     logger.info("SERVER_DEBUG:" + str(SERVER_DEBUG))
