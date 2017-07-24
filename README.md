@@ -7,7 +7,7 @@ To start the server run:
 -  ./netconf-proxy.py 
    
 To test the server run:
--   ./netconf-tester.py
+-   pytest -v ./netconf-tester.py
    
 To generate a vm that runs this server as a systemd server run:
 
