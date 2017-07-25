@@ -320,7 +320,7 @@ def set_ip_from_metajs():
 
     # set ip
     subprocess.call(shlex.split("ifconfig " + device + " 0.0.0.0"))
-    subprocess.call(shlex.split("ip addr add local " + ip_address + "/24 broadcast 192.168.1.255 dev " + device))
+    subprocess.call(shlex.split("ip addr add " + ip_address + "/24  dev " + device))
 
 
 if __name__ == "__main__":
