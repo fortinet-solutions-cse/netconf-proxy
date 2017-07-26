@@ -88,19 +88,33 @@ rm -rf netconf_proxy-cidata.iso
 genisoimage -output netconf_proxy-cidata.iso -volid cidata -joliet -rock user-data meta-data
 
 cat >install_script << EOF
+
 echo "** Updating system..."
+
 sudo apt-get update
 sudo apt-get install -y python-pip python-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg8-dev zlib1g-dev
+
 echo "** Installing pip..."
+
 sudo pip install paramiko pysnmp lxml
+
 echo "** Copying service file..."
+
 cp /opt/service/netconf-proxy.service /lib/systemd/system/netconf-proxy.service
+
 echo "** Enabling and starting service..."
+
 systemctl enable netconf-proxy
 systemctl start netconf-proxy
+
 echo "** Removing Cloud Init Service..."
+
 echo 'datasource_list: [ None ]' | sudo -s tee /etc/cloud/cloud.cfg.d/90_dpkg.cfg
 sudo dpkg-reconfigure -f noninteractive cloud-init
+
+echo "** Setting static ip..."
+echo "network: {config: disabled}" > /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+sed -i 's/iface ens\([0-9]\) inet dhcp/iface ens\1 inet static\naddress 192.168.122.10\nnetmask 255.255.255.0/' /etc/network/interfaces.d/50-cloud-init.cfg
 EOF
 
 sleep 1

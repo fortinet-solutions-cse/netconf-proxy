@@ -321,7 +321,7 @@ def set_ip_from_metajs():
     # set ip
     subprocess.call(shlex.split("ifconfig " + device + " 0.0.0.0"))
     subprocess.call(shlex.split("ip addr add " + ip_address + "/24  dev " + device))
-
+    subprocess.call(shlex.split("sed -i 's/address \\(.*\\)/address "+ip_address+"/' /etc/network/interfaces.d/50-cloud-init.cfg"))
 
 if __name__ == "__main__":
 
