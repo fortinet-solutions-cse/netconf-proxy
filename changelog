@@ -1,3 +1,8 @@
+v0.7
+
+ - Enable ssh access with password
+ - Completely disable DHCP to try to speed up boot up
+
 v0.6
  - Changed name Netconf-proxy (process, service, project, etc)
  - get-config returns historical snmp traps (fake info, pending mapping)
