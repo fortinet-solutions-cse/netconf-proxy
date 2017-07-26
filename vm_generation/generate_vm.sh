@@ -6,14 +6,13 @@
 #
 # Output will be:
 #    delivery.img
-#    delivery-cidata.img
 #
 # Miguel Angel Muñoz Gonzalez
 # magonzalez(at)fortinet.com
 #
 #************************************************
 
-set -x
+#set -x
 
 export UBUNTU_IMAGE_URL=https://cloud-images.ubuntu.com/releases/16.04/release/ubuntu-16.04-server-cloudimg-amd64-disk1.img
 export UBUNTU_IMAGE_NAME=$(basename ${UBUNTU_IMAGE_URL})
@@ -88,6 +87,11 @@ rm -rf netconf_proxy-cidata.iso
 genisoimage -output netconf_proxy-cidata.iso -volid cidata -joliet -rock user-data meta-data
 
 cat >install_script << EOF
+echo "Enabling ssh access..."
+
+sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config
+systemctl restart sshd.service
 
 echo "** Updating system..."
 
@@ -136,11 +140,11 @@ done
 
 echo "Server seems to have started properly. Generating final image"
 
-sleep 100
+sleep 40
 
 virsh destroy netconf_proxy
 
-sleep 20
+sleep 15
 
 cp netconf_proxy.img delivery_test.img
 
