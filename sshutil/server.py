@@ -37,7 +37,7 @@ class SSHUserPassController (ssh.ServerInterface):
         self.event = threading.Event()
 
     def get_allowed_auths (self, unused_username):
-        return ["password"]
+        return 'password'
 
     def check_auth_none (self, unused_username):
         return ssh.AUTH_FAILED
