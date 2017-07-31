@@ -58,8 +58,8 @@ logger = logging.getLogger(__name__) # pylint: disable=C0103
 snmp_traps_store = [] # pylint: disable=C0103
 
 NC_PORT = 830
-USER = "m"
-PASSWORD = "admin"
+USER = "replace_with_user"
+PASSWORD = "replace_with_password"
 SERVER_DEBUG = False
 
 # **********************************
