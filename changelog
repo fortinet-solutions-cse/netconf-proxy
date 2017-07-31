@@ -1,3 +1,9 @@
+v0.8
+
+ - Credentials updated according to customer
+ - Bug: Customer JNC library sends Auth=None before Auth=Password
+ - Pycharm included in case local debug is needed
+
 v0.7
 
  - Enable ssh access with password

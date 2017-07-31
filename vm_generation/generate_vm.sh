@@ -12,7 +12,7 @@
 #
 #************************************************
 
-#set -x
+set -x
 
 export UBUNTU_IMAGE_URL=https://cloud-images.ubuntu.com/releases/16.04/release/ubuntu-16.04-server-cloudimg-amd64-disk1.img
 export UBUNTU_IMAGE_NAME=$(basename ${UBUNTU_IMAGE_URL})
@@ -41,8 +41,11 @@ cp ${UBUNTU_IMAGE_NAME} netconf_proxy.img
 mkdir -p /tmp/guest_snmp/
 sudo guestmount /tmp/guest_snmp/ -a netconf_proxy.img -m /dev/sda1
 
-sudo rsync -r -v --max-size=32768 ../*  /tmp/guest_snmp/opt/
+sudo rsync -r -v --max-size=1048576 ../*  /tmp/guest_snmp/opt/
 sudo rsync -r -v meta.js  /tmp/guest_snmp/
+
+# Extra: add pycharm as a temporary measure to debug code
+sudo rsync -r -v /opt/pycharm-community-*  /tmp/guest_snmp/opt/
 
 sudo guestunmount /tmp/guest_snmp/
 
