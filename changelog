@@ -1,3 +1,8 @@
+v0.8.1
+
+ - Credentials updated upong generation of VM
+ - Fix missing System Under Test variable
+
 v0.8
 
  - Credentials updated according to customer
