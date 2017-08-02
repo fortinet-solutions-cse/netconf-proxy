@@ -21,6 +21,7 @@ def logger():
 
 USER = "replace_with_user"
 PASSWORD = "replace_with_password"
+SUT_IP = "localhost"
 
 logging.basicConfig(level=logging.INFO)
 
