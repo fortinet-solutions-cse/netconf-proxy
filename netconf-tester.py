@@ -22,6 +22,9 @@ def logger():
 USER = "replace_with_user"
 PASSWORD = "replace_with_password"
 
+logging.basicConfig(level=logging.INFO)
+
+
 def test_std_ssh_cmdline_and_auth_none(server_debug, logger):
 
     command = ["echo", """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
@@ -49,7 +52,7 @@ def test_std_ssh_cmdline_and_auth_none(server_debug, logger):
 ]]>]]>"""]
 
     p1 = subprocess.Popen(command, stdout=subprocess.PIPE)
-    p2 = subprocess.Popen(["ssh", "vnfmuser@localhost","-p 830", "-s","netconf"], stdin=p1.stdout, stdout=subprocess.PIPE)
+    p2 = subprocess.Popen(["sshpass", "-p", PASSWORD, "ssh", USER+"@"+SUT_IP,"-p 830", "-s","netconf"], stdin=p1.stdout, stdout=subprocess.PIPE)
     p1.stdout.close()
     output,err=p2.communicate()
 
@@ -57,11 +60,12 @@ def test_std_ssh_cmdline_and_auth_none(server_debug, logger):
     assert err is None
 
     m = re.search("<rpc-reply.*ok.*</rpc-reply", output, flags=re.MULTILINE|re.DOTALL)
-    assert m is not None
+    assert m is not None, "Rpc reply does not seem to be ok"
 
 
 def test_get(server_debug, logger):
-    session = client.NetconfSSHSession("127.0.0.1",
+
+    session = client.NetconfSSHSession(SUT_IP,
                                        username=USER,
                                        password=PASSWORD,
                                        port=830,
@@ -74,13 +78,14 @@ def test_get(server_debug, logger):
 
     m = re.search("<rpc-reply.*ok.*</rpc-reply", answer, flags=re.MULTILINE|re.DOTALL)
 
-    assert m is not None, "rpc answer does not match expected result."
+    assert m is not None, "Rpc reply does not seem to be ok"
 
     session.close()
 
 
 def test_create_subscription(server_debug, logger):
-    session = client.NetconfSSHSession("127.0.0.1",
+
+    session = client.NetconfSSHSession(SUT_IP,
                                        username=USER,
                                        password=PASSWORD,
                                        port=830,
@@ -100,11 +105,13 @@ def test_create_subscription(server_debug, logger):
     logger.info("Answer received: "+str(answer))
 
     m = re.search("<rpc-reply.*ok.*</rpc-reply", answer, flags=re.MULTILINE|re.DOTALL)
-    assert m is not None, "rpc answer does not match expected result."
+
+    assert m is not None, "Rpc reply does not seem to be ok"
 
 
 def test_create_subscription_and_wait_for_notif(server_debug, logger):
-    session = client.NetconfSSHSession("127.0.0.1",
+
+    session = client.NetconfSSHSession(SUT_IP,
                                        username=USER,
                                        password=PASSWORD,
                                        port=830,
@@ -125,7 +132,7 @@ def test_create_subscription_and_wait_for_notif(server_debug, logger):
 
     m = re.search("<rpc-reply.*ok.*</rpc-reply", answer, flags=re.MULTILINE|re.DOTALL)
 
-    assert m is not None, "rpc answer does not match expected result."
+    assert m is not None, "Rpc reply does not seem to be ok"
 
     time.sleep(3)
 
@@ -136,7 +143,7 @@ def test_create_subscription_and_wait_for_notif(server_debug, logger):
         sendNotification(
             SnmpEngine(),
             CommunityData('public', mpModel=0),
-            UdpTransportTarget(('127.0.0.1', 162)),
+            UdpTransportTarget((SUT_IP, 162)),
             ContextData(),
             'trap',
             NotificationType(
@@ -158,7 +165,8 @@ def test_create_subscription_and_wait_for_notif(server_debug, logger):
     session.close()
 
 def test_get_config(server_debug, logger):
-    session = client.NetconfSSHSession("127.0.0.1",
+
+    session = client.NetconfSSHSession(SUT_IP,
                                        username=USER,
                                        password=PASSWORD,
                                        port=830,
@@ -173,10 +181,11 @@ def test_get_config(server_debug, logger):
 
     m = re.search("<rpc-reply.*<data.*<vnfi.*</rpc-reply", answer, flags=re.MULTILINE|re.DOTALL)
 
-    assert m is not None, "rpc answer does not match expected result."
+    assert m is not None, "Rpc reply does not seem to be ok"
 
 def test_get_config_with_multiple_notifs(server_debug, logger):
-    session = client.NetconfSSHSession("127.0.0.1",
+
+    session = client.NetconfSSHSession(SUT_IP,
                                        username=USER,
                                        password=PASSWORD,
                                        port=830,
@@ -187,7 +196,7 @@ def test_get_config_with_multiple_notifs(server_debug, logger):
         sendNotification(
             SnmpEngine(),
             CommunityData('public', mpModel=0),
-            UdpTransportTarget(('127.0.0.1', 162)),
+            UdpTransportTarget((SUT_IP, 162)),
             ContextData(),
             'trap',
             NotificationType(
@@ -209,7 +218,7 @@ def test_get_config_with_multiple_notifs(server_debug, logger):
         sendNotification(
             SnmpEngine(),
             CommunityData('public', mpModel=0),
-            UdpTransportTarget(('127.0.0.1', 162)),
+            UdpTransportTarget((SUT_IP, 162)),
             ContextData(),
             'trap',
             NotificationType(
@@ -234,7 +243,7 @@ def test_get_config_with_multiple_notifs(server_debug, logger):
 
     m = re.search("<rpc-reply.*<data.*<vnfi.*(<vnf-alarm.*){2}</rpc-reply", answer, flags=re.MULTILINE|re.DOTALL)
 
-    assert m is not None, "rpc answer does not match expected result."
+    assert m is not None, "Rpc reply does not seem to be ok"
 
 
 if __name__ == "__main__":

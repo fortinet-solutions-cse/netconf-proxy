@@ -13,3 +13,5 @@ rm -f install_script
 rm -f install_script_for_delivery
 rm -f delivery_test.img
 rm -rf delivery
+guestunmount /tmp/guest_netconf/
+rm -rf /tmp/guest_netconf/

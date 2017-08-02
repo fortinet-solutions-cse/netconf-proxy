@@ -20,6 +20,18 @@ export UBUNTU_IMAGE_NAME=$(basename ${UBUNTU_IMAGE_URL})
 ./clean.sh
 
 #************************************************
+# Check file with credentials is present
+#************************************************
+
+if [ ! -e "credentials" ]; then
+   echo "Credentials file should be present"
+   exit -1
+fi
+
+NETCONF_USER=$(grep -Po  "(?<=^user=).*" credentials)
+NETCONF_PASSWORD=$(grep -Po  "(?<=^password=).*" credentials)
+
+#************************************************
 # Get Ubuntu 16.04 as base image
 #************************************************
 
@@ -38,16 +50,22 @@ cp ${UBUNTU_IMAGE_NAME} netconf_proxy.img
 # Copy netconf server code to image
 #************************************************
 
-mkdir -p /tmp/guest_snmp/
-sudo guestmount /tmp/guest_snmp/ -a netconf_proxy.img -m /dev/sda1
+mkdir -p /tmp/guest_netconf/
+sudo guestmount /tmp/guest_netconf/ -a netconf_proxy.img -m /dev/sda1
 
-sudo rsync -r -v --max-size=1048576 ../*  /tmp/guest_snmp/opt/
-sudo rsync -r -v meta.js  /tmp/guest_snmp/
+sudo rsync -r -v --max-size=1048576 ../*  /tmp/guest_netconf/opt/
+sudo rsync -r -v meta.js  /tmp/guest_netconf/
+
+#update credentials before unmounting
+sudo sed -i "s/replace_with_user/${NETCONF_USER}/" /tmp/guest_netconf/opt/netconf-proxy.py
+sudo sed -i "s/replace_with_user/${NETCONF_USER}/" /tmp/guest_netconf/opt/netconf-tester.py
+sudo sed -i "s/replace_with_password/${NETCONF_PASSWORD}/" /tmp/guest_netconf/opt/netconf-proxy.py
+sudo sed -i "s/replace_with_password/${NETCONF_PASSWORD}/" /tmp/guest_netconf/opt/netconf-tester.py
 
 # Extra: add pycharm as a temporary measure to debug code
-sudo rsync -r -v /opt/pycharm-community-*  /tmp/guest_snmp/opt/
+sudo rsync -r -v /opt/pycharm-community-*  /tmp/guest_netconf/opt/
 
-sudo guestunmount /tmp/guest_snmp/
+sudo guestunmount /tmp/guest_netconf/
 
 #************************************************
 # Generate Cloud Init for VM
@@ -99,11 +117,11 @@ systemctl restart sshd.service
 echo "** Updating system..."
 
 sudo apt-get update
-sudo apt-get install -y python-pip python-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg8-dev zlib1g-dev
+sudo apt-get install -y python-pip python-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg8-dev zlib1g-dev sshpass snmp gedit
 
 echo "** Installing pip..."
 
-sudo pip install paramiko pysnmp lxml
+sudo pip install paramiko pysnmp lxml pytest
 
 echo "** Copying service file..."
 
@@ -121,10 +139,8 @@ sudo dpkg-reconfigure -f noninteractive cloud-init
 
 echo "** Setting static ip..."
 echo "network: {config: disabled}" > /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
-sed -i 's/iface ens\([0-9]\) inet dhcp/iface ens\1 inet static\naddress 192.168.122.10\nnetmask 255.255.255.0/' /etc/network/interfaces.d/50-cloud-init.cfg
+sed -i 's/iface ens\([0-9]\) inet dhcp/iface ens\1 inet static\naddress 192.168.122.10\nnetmask 255.255.255.0\ndns-nameservers 8.8.8.8/' /etc/network/interfaces.d/50-cloud-init.cfg
 EOF
-
-sleep 1
 
 sudo virt-sysprep -a netconf_proxy.img --hostname netconf_proxy --root-password password:m --firstboot install_script
 

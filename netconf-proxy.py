@@ -142,7 +142,6 @@ def snmp_trap_receiver(transport_dispatcher, transport_domain, transport_address
 # General Netconf functions
 # **********************************
 
-
 class NetconfMethods(server.NetconfMethods):
 
     """ Class containing the methods that will be called upon reception of Netconf external calls"""
@@ -246,7 +245,6 @@ class NetconfMethods(server.NetconfMethods):
 # Setup SNMP
 # **********************************
 
-
 def setup_snmp():
 
     """Configure SNMP server listener"""
@@ -279,7 +277,6 @@ def setup_snmp():
 # Setup Netconf
 # **********************************
 
-
 def setup_netconf():
 
     "Configure Netconf server listener"
@@ -296,6 +293,10 @@ def setup_netconf():
                                                  port=NC_PORT,
                                                  host_key="keys/host_key",
                                                  debug=SERVER_DEBUG)
+
+# **********************************
+# Set ip from /meta.js file
+# **********************************
 
 def set_ip_from_metajs():
 
@@ -322,6 +323,10 @@ def set_ip_from_metajs():
     subprocess.call(shlex.split("ifconfig " + device + " 0.0.0.0"))
     subprocess.call(shlex.split("ip addr add " + ip_address + "/24  dev " + device))
     subprocess.call(shlex.split("sed -i 's/address \\(.*\\)/address "+ip_address+"/' /etc/network/interfaces.d/50-cloud-init.cfg"))
+
+# **********************************
+# Main
+# **********************************
 
 if __name__ == "__main__":
 
