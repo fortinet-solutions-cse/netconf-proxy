@@ -1,4 +1,9 @@
+v0.8.3
+
+ - Send Netconf notifs only to those sessions which have subscribed first
+ 
 v0.8.2
+
  - Bug: SNMP listens in all interfaces
 
 v0.8.1
