@@ -8,8 +8,6 @@ import argparse
 import re
 import pytest
 import subprocess
-import shlex
-
 
 @pytest.fixture
 def server_debug():
@@ -17,43 +15,47 @@ def server_debug():
 
 @pytest.fixture
 def logger():
-    return logging.getLogger(__name__)
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=logging.INFO)
+    return logger
+
 
 USER = "replace_with_user"
 PASSWORD = "replace_with_password"
 SUT_IP = "localhost"
 
-logging.basicConfig(level=logging.INFO)
-
 
 def test_std_ssh_cmdline_and_auth_none(server_debug, logger):
 
     command = ["echo", """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
- <hello xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">
-  <capabilities>
-    <capability>urn:ietf:params:netconf:base:1.0</capability>
-  </capabilities>
- </hello>
-]]>]]>
+        <hello xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">
+        <capabilities>
+            <capability>urn:ietf:params:netconf:base:1.0</capability>
+        </capabilities>
+        </hello>
+    ]]>]]>
 
-<nc:rpc xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" nc:message-id=\"1\">
-  <ncn:create-subscription xmlns:ncn=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">
-    <ncn:filter ncn:type=\"subtree\">
-      <vnf-alarm xmlns=\"urn:samsung:vnf-alarm-interface\" xmlns:vaintf=\"urn:samsung:vnf-alarm-interface\"/>      
-      <vnf-alarm-rebuild-request xmlns=\"urn:samsung:vnf-alarm-interface\" xmlns:vaintf=\"urn:samsung:vnf-alarm-interface\"/>
-      <default-parameter-loss-notification xmlns=\"urn:samsung:vnf-deploy-interface\" xmlns:vdintf=\"urn:samsung:vnf-deploy-interface\"/>    
-    </ncn:filter>
-  </ncn:create-subscription>
-</nc:rpc>
-]]>]]>
+    <nc:rpc xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" nc:message-id=\"1\">
+        <ncn:create-subscription xmlns:ncn=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">
+            <ncn:filter ncn:type=\"subtree\">
+                <vnf-alarm xmlns=\"urn:samsung:vnf-alarm-interface\" xmlns:vaintf=\"urn:samsung:vnf-alarm-interface\"/>      
+                <vnf-alarm-rebuild-request xmlns=\"urn:samsung:vnf-alarm-interface\" xmlns:vaintf=\"urn:samsung:vnf-alarm-interface\"/>
+                <default-parameter-loss-notification xmlns=\"urn:samsung:vnf-deploy-interface\" 
+                xmlns:vdintf=\"urn:samsung:vnf-deploy-interface\"/>
+            </ncn:filter>
+        </ncn:create-subscription>
+    </nc:rpc>
+    ]]>]]>
 
-<rpc message-id=\"2\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">
-<close-session/>
-</rpc>
-]]>]]>"""]
+    <rpc message-id=\"2\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">
+        <close-session/>
+    </rpc>
+    ]]>]]>"""]
 
     p1 = subprocess.Popen(command, stdout=subprocess.PIPE)
-    p2 = subprocess.Popen(["sshpass", "-p", PASSWORD, "ssh", USER+"@"+SUT_IP,"-p 830", "-s","netconf"], stdin=p1.stdout, stdout=subprocess.PIPE)
+    p2 = subprocess.Popen(["sshpass", "-p", PASSWORD,
+                           "ssh", USER+"@"+SUT_IP,"-p 830", "-s","netconf"],
+                           stdin=p1.stdout, stdout=subprocess.PIPE)
     p1.stdout.close()
     output,err=p2.communicate()
 
@@ -93,13 +95,15 @@ def test_create_subscription(server_debug, logger):
                                        debug=server_debug)
     assert session
 
-    query = """<ncn:create-subscription xmlns:ncn="urn:ietf:params:xml:ns:netconf:notification:1.0">
-    <ncn:filter ncn:type="subtree">
-      <vnf-alarm xmlns="urn:samsung:vnf-alarm-interface" xmlns:vaintf="urn:samsung:vnf-alarm-interface"/>      
-      <vnf-alarm-rebuild-request xmlns="urn:samsung:vnf-alarm-interface" xmlns:vaintf="urn:samsung:vnf-alarm-interface"/>
-      <default-parameter-loss-notification xmlns="urn:samsung:vnf-deploy-interface" xmlns:vdintf="urn:samsung:vnf-deploy-interface"/>    
-    </ncn:filter>
-  </ncn:create-subscription>"""
+    query = """
+    <ncn:create-subscription xmlns:ncn="urn:ietf:params:xml:ns:netconf:notification:1.0">
+        <ncn:filter ncn:type="subtree">
+            <vnf-alarm xmlns="urn:samsung:vnf-alarm-interface" xmlns:vaintf="urn:samsung:vnf-alarm-interface"/>      
+            <vnf-alarm-rebuild-request xmlns="urn:samsung:vnf-alarm-interface" xmlns:vaintf="urn:samsung:vnf-alarm-interface"/>
+            <default-parameter-loss-notification xmlns="urn:samsung:vnf-deploy-interface" 
+            xmlns:vdintf="urn:samsung:vnf-deploy-interface"/>    
+        </ncn:filter>
+    </ncn:create-subscription>"""
 
     (_, _, answer) = session.send_rpc(query)
 
@@ -109,8 +113,9 @@ def test_create_subscription(server_debug, logger):
 
     assert m is not None, "Rpc reply does not seem to be ok"
 
+    session.close()
 
-def test_create_subscription_and_wait_for_notif(server_debug, logger):
+def test_create_subscription_and_wait_for_notif(server_debug, logger, caplog):
 
     session = client.NetconfSSHSession(SUT_IP,
                                        username=USER,
@@ -119,13 +124,15 @@ def test_create_subscription_and_wait_for_notif(server_debug, logger):
                                        debug=server_debug)
     assert session
 
-    query = """<ncn:create-subscription xmlns:ncn="urn:ietf:params:xml:ns:netconf:notification:1.0">
+    query = """
+    <ncn:create-subscription xmlns:ncn="urn:ietf:params:xml:ns:netconf:notification:1.0">
         <ncn:filter ncn:type="subtree">
           <vnf-alarm xmlns="urn:samsung:vnf-alarm-interface" xmlns:vaintf="urn:samsung:vnf-alarm-interface"/>      
           <vnf-alarm-rebuild-request xmlns="urn:samsung:vnf-alarm-interface" xmlns:vaintf="urn:samsung:vnf-alarm-interface"/>
-          <default-parameter-loss-notification xmlns="urn:samsung:vnf-deploy-interface" xmlns:vdintf="urn:samsung:vnf-deploy-interface"/>    
+          <default-parameter-loss-notification xmlns="urn:samsung:vnf-deploy-interface"
+          xmlns:vdintf="urn:samsung:vnf-deploy-interface"/>    
         </ncn:filter>
-      </ncn:create-subscription>"""
+    </ncn:create-subscription>"""
 
     (_, _, answer) = session.send_rpc(query)
 
@@ -135,7 +142,7 @@ def test_create_subscription_and_wait_for_notif(server_debug, logger):
 
     assert m is not None, "Rpc reply does not seem to be ok"
 
-    time.sleep(3)
+    time.sleep(0.2)
 
     # You can also use:
     # snmptrap -v1 -c public 127.0.0.1 1.3.6.1.4.1.20408.4.1.1.2 127.0.0.1 1 1 123 1.3.6.1.2.1.1.1.0 s test
@@ -160,8 +167,13 @@ def test_create_subscription_and_wait_for_notif(server_debug, logger):
         logger.critical(errorIndication)
         assert 0, "Error sending SNMP trap"
 
-    #TODO: Wait for notif
-    time.sleep(2)
+    time.sleep(0.2)
+
+    out = caplog.text
+
+    m = re.search("<notification.*alarm-type.*alarm-info.*alarm-code.*</notification", out, flags=re.MULTILINE|re.DOTALL)
+
+    assert m is not None, "Notification has not been received"
 
     session.close()
 
@@ -174,7 +186,15 @@ def test_get_config(server_debug, logger):
                                        debug=server_debug)
     assert session
 
-    query = """<nc:get-config xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" ><nc:source><nc:running/></nc:source><nc:filter nc:type="subtree"><vnfi xmlns="urn:samsung:vnf-alarm-interface" xmlns:vaintf="urn:samsung:vnf-alarm-interface"/></nc:filter></nc:get-config>"""
+    query = """
+    <nc:get-config xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" >
+        <nc:source>
+           <nc:running/>
+        </nc:source>
+        <nc:filter nc:type="subtree">
+            <vnfi xmlns="urn:samsung:vnf-alarm-interface" xmlns:vaintf="urn:samsung:vnf-alarm-interface"/>
+        </nc:filter>
+    </nc:get-config>"""
 
     (_, _, answer) = session.send_rpc(query)
 
@@ -184,7 +204,9 @@ def test_get_config(server_debug, logger):
 
     assert m is not None, "Rpc reply does not seem to be ok"
 
-def test_get_config_with_multiple_notifs(server_debug, logger):
+    session.close()
+
+def test_get_config_after_multiple_traps(server_debug, logger):
 
     session = client.NetconfSSHSession(SUT_IP,
                                        username=USER,
@@ -209,7 +231,7 @@ def test_get_config_with_multiple_notifs(server_debug, logger):
         )
     )
 
-    time.sleep(1)
+    time.sleep(0.2)
 
     if errorIndication:
         logger.critical(errorIndication)
@@ -235,8 +257,17 @@ def test_get_config_with_multiple_notifs(server_debug, logger):
         logger.critical(errorIndication)
         assert 0, "Error sending SNMP trap"
 
-    time.sleep(1)
-    query = """<nc:get-config xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" ><nc:source><nc:running/></nc:source><nc:filter nc:type="subtree"><vnfi xmlns="urn:samsung:vnf-alarm-interface" xmlns:vaintf="urn:samsung:vnf-alarm-interface"/></nc:filter></nc:get-config>"""
+    time.sleep(0.2)
+
+    query = """
+    <nc:get-config xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" >
+        <nc:source>
+            <nc:running/>
+        </nc:source>
+        <nc:filter nc:type="subtree">
+            <vnfi xmlns="urn:samsung:vnf-alarm-interface" xmlns:vaintf="urn:samsung:vnf-alarm-interface"/>
+        </nc:filter>
+    </nc:get-config>"""
 
     (_, _, answer) = session.send_rpc(query)
 

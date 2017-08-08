@@ -150,7 +150,7 @@ class NetconfClientSession (NetconfSession):
                 raise SessionError(msg, "No rpc-reply or notification found")
             else:
                 logger.info("* NOTIF received *")
-                logger.debug(etree.tostring(tree,pretty_print=True))
+                logger.info(etree.tostring(tree,pretty_print=True))
                 return
 
         for reply in replies:
