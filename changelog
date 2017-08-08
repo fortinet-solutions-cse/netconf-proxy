@@ -1,3 +1,6 @@
+v0.8.2
+ - Bug: SNMP listens in all interfaces
+
 v0.8.1
 
  - Credentials updated upong generation of VM

@@ -255,7 +255,7 @@ def setup_snmp():
 
     # UDP/IPv4
     transport_dispatcher.registerTransport(
-        udp.domainName, udp.UdpSocketTransport().openServerMode(('localhost', 162))
+        udp.domainName, udp.UdpSocketTransport().openServerMode(('0.0.0.0', 162))
     )
 
     # UDP/IPv6
