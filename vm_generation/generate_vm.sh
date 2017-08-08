@@ -121,7 +121,7 @@ sudo apt-get install -y python-pip python-dev libffi-dev libssl-dev libxml2-dev 
 
 echo "** Installing pip..."
 
-sudo pip install paramiko pysnmp lxml pytest
+sudo pip install paramiko pysnmp lxml pytest pytest-catchlog
 
 echo "** Copying service file..."
 

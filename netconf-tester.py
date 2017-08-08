@@ -246,6 +246,99 @@ def test_get_config_with_multiple_notifs(server_debug, logger):
 
     assert m is not None, "Rpc reply does not seem to be ok"
 
+    session.close()
+
+
+def test_notif_only_sent_after_create_subscription(server_debug, logger, caplog):
+
+    session = client.NetconfSSHSession(SUT_IP,
+                                       username=USER,
+                                       password=PASSWORD,
+                                       port=830,
+                                       debug=server_debug)
+    assert session
+
+
+    time.sleep(0.2)
+
+    errorIndication, errorStatus, errorIndex, varBinds = next(
+        sendNotification(
+            SnmpEngine(),
+            CommunityData('public', mpModel=0),
+            UdpTransportTarget((SUT_IP, 162)),
+            ContextData(),
+            'trap',
+            NotificationType(
+                ObjectIdentity('1.3.6.1.6.3.1.1.5.2')
+            ).addVarBinds(
+                ('1.3.6.1.6.3.1.1.4.3.0', '1.3.6.1.4.1.20408.4.1.1.2'),
+                ('1.3.6.1.2.1.1.1.0', OctetString('my system'))
+            )
+        )
+    )
+
+    if errorIndication:
+        logger.critical(errorIndication)
+        assert 0, "Error sending SNMP trap"
+
+    time.sleep(0.2)
+
+    out = caplog.text
+
+    m = re.search("<notification.*alarm-type.*alarm-info.*alarm-code.*</notification", out, flags=re.MULTILINE|re.DOTALL)
+
+    assert m is None, "Notification has been received"
+
+    query = """
+    <ncn:create-subscription xmlns:ncn="urn:ietf:params:xml:ns:netconf:notification:1.0">
+        <ncn:filter ncn:type="subtree">
+            <vnf-alarm xmlns="urn:samsung:vnf-alarm-interface" xmlns:vaintf="urn:samsung:vnf-alarm-interface"/>      
+            <vnf-alarm-rebuild-request xmlns="urn:samsung:vnf-alarm-interface" xmlns:vaintf="urn:samsung:vnf-alarm-interface"/>
+            <default-parameter-loss-notification xmlns="urn:samsung:vnf-deploy-interface"
+            xmlns:vdintf="urn:samsung:vnf-deploy-interface"/>    
+        </ncn:filter>
+    </ncn:create-subscription>"""
+
+    (_, _, answer) = session.send_rpc(query)
+
+    logger.info("Answer received: " + str(answer))
+
+    m = re.search("<rpc-reply.*ok.*</rpc-reply", answer, flags=re.MULTILINE | re.DOTALL)
+
+    assert m is not None, "Rpc reply does not seem to be ok"
+
+    time.sleep(0.2)
+
+
+    errorIndication, errorStatus, errorIndex, varBinds = next(
+        sendNotification(
+            SnmpEngine(),
+            CommunityData('public', mpModel=0),
+            UdpTransportTarget((SUT_IP, 162)),
+            ContextData(),
+            'trap',
+            NotificationType(
+                ObjectIdentity('1.3.6.1.6.3.1.1.5.2')
+            ).addVarBinds(
+                ('1.3.6.1.6.3.1.1.4.3.0', '1.3.6.1.4.1.20408.4.1.1.2'),
+                ('1.3.6.1.2.1.1.1.0', OctetString('my system'))
+            )
+        )
+    )
+
+    if errorIndication:
+        logger.critical(errorIndication)
+        assert 0, "Error sending SNMP trap"
+
+    time.sleep(0.2)
+
+    out = caplog.text
+
+    m = re.search("<notification.*alarm-type.*alarm-info.*alarm-code.*</notification", out, flags=re.MULTILINE|re.DOTALL)
+
+    assert m is not None, "Notification has not been received"
+
+    session.close()
 
 if __name__ == "__main__":
 

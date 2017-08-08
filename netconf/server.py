@@ -204,6 +204,8 @@ class NetconfServerSession (base.NetconfSession):
         if self.debug:
             logger.debug("%s: Client session-id %s created", str(self), str(sid))
 
+        self.subscription_active=False
+
     def __del__ (self):
         self.close()
         super(NetconfServerSession, self).__del__()
@@ -212,6 +214,7 @@ class NetconfServerSession (base.NetconfSession):
         return "NetconfServerSession(sid:{})".format(self.session_id)
 
     def close (self):
+        self.subscription_active = False
         # XXX should be invoking a method in self.methods?
         if self.debug:
             logger.debug("%s: Closing.", str(self))
@@ -474,7 +477,7 @@ class NetconfSSHServer (sshutil.server.SSHServer):
         logger.info("Notifications triggered")
         for sckt in self.sockets:
             for session in sckt.sessions:
-                if session.is_active():
+                if session.is_active() and session.subscription_active:
                     session.send_message(notif)
 
 

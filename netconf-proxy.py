@@ -239,6 +239,8 @@ class NetconfMethods(server.NetconfMethods):
         for param in unused_params:
             logger.debug("Param:" + etree.tostring(param))
 
+        unused_session.subscription_active = True
+
         return etree.Element("ok")
 
 # **********************************
