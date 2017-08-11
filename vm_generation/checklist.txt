@@ -1,0 +1,8 @@
+Before Release Checklist
+=========================
+
+Root/Netconf credentials work
+Netconf proxy is listening on ::830 and ::162
+Netconf proxy is listening on all interfaces
+Credentials have been properly updated
+Pytest run without failures
