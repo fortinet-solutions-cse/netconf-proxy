@@ -25,11 +25,14 @@ import re
 import subprocess
 import shlex
 import argparse
+import datetime
 
 
 # **********************************
 # SNMP imports
 # **********************************
+
+
 from pysnmp.carrier.asynsock.dispatch import AsynsockDispatcher
 from pysnmp.carrier.asynsock.dgram import udp, udp6
 from pysnmp.proto import api
@@ -56,6 +59,11 @@ netconf_server = None # pylint: disable=C0103
 logger = logging.getLogger(__name__) # pylint: disable=C0103
 
 snmp_traps_store = [] # pylint: disable=C0103
+
+#Default object id of the VNFI
+objectid = "7401f9d7-2d5e-4cfe-8ae1-d2adebf085fb"
+#Default object name and location of the VNFI
+objectname = "FUPC0"
 
 NC_PORT = 830
 USER = "replace_with_user"
@@ -101,18 +109,21 @@ def snmp_trap_receiver(transport_dispatcher, transport_domain, transport_address
 
             # TODO: Missing mapping from SNMP to Netconf Values
 
-            values = {"time":"2016-12-13T22:32:58Z",\
-                      "systemdn":"fd19:bcb8:3cb5:2000::c0a8:8201",\
-                      "alarmgroup":"EQUIPMENT_ALARM",\
-                      "alarmtype":"FF",\
-                      "alarmseverity":"major",\
-                      "alarminfo":"-",\
-                      "alarmlocation":"FUPC0",\
-                      "alarmcode":"1502",\
-                      "objectid":"7401f9d7-2d5e-4cfe-8ae1-d2adebf085fb",\
-                      "objecttype":"VNF Component",\
-                      "sequencenumber":"0",\
-                      "notificationtype":"NotifyClearedAlarm"}
+            d = datetime.datetime.utcnow()
+            msec = d.strftime("%f")[0:2]
+
+            values = {"time": d.strftime("%Y-%m-%dT%H:%M:%S.{}Z".format(msec)),
+                      "systemdn": "fd19:bcb8:3cb5:2000::c0a8:8201",
+                      "alarmgroup": "EQUIPMENT_ALARM",
+                      "alarmtype": "FF",
+                      "alarmseverity": "major",
+                      "alarminfo": "-",
+                      "alarmlocation": objectname,
+                      "alarmcode": "1502",
+                      "objectid": objectid,
+                      "objecttype": "VNF Instance",
+                      "sequencenumber": "0",
+                      "notificationtype": "NotifyNewAlarm"}
 
             notif = """<notification xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0">"""\
                     """<eventTime>%(time)s</eventTime>""" \
@@ -142,6 +153,7 @@ def snmp_trap_receiver(transport_dispatcher, transport_domain, transport_address
 # General Netconf functions
 # **********************************
 
+
 class NetconfMethods(server.NetconfMethods):
 
     """ Class containing the methods that will be called upon reception of Netconf external calls"""
@@ -151,36 +163,36 @@ class NetconfMethods(server.NetconfMethods):
                            "urn:ietf:params:netconf:capability:interleave:1.0",
                            "urn:ietf:params:netconf:capability:notification:1.0",
                            "urn:ietf:params:netconf:capability:validate:1.0",
-                           "urn:samsung:vnf-deploy-interface?module=vnf-deploy-interface&amp;"\
+                           "urn:samsung:vnf-deploy-interface?module=vnf-deploy-interface&amp;"
                            "revision=2016-05-15",
-                           "urn:samsung:vnf-alarm-interface?module=vnf-alarm-interface&amp;"\
+                           "urn:samsung:vnf-alarm-interface?module=vnf-alarm-interface&amp;"
                            "revision=2016-07-08",
-                           "urn:samsung:samsung-types?module=samsung-types&amp;"\
+                           "urn:samsung:samsung-types?module=samsung-types&amp;"
                            "revision=2016-05-15",
-                           "urn:cesnet:tmc:netopeer:1.0?module=netopeer-cfgnetopeer&amp;"\
+                           "urn:cesnet:tmc:netopeer:1.0?module=netopeer-cfgnetopeer&amp;"
                            "revision=2015-05-19&amp;features=ssh,dynamic-modules",
-                           "urn:ietf:params:xml:ns:yang:ietf-netconf-server?module="\
-                           "ietf-netconf-server&amp;revision=2014-01-24&amp;"\
+                           "urn:ietf:params:xml:ns:yang:ietf-netconf-server?module="
+                           "ietf-netconf-server&amp;revision=2014-01-24&amp;"
                            "features=ssh,inbound-ssh,outbound-ssh",
-                           "urn:ietf:params:xml:ns:yang:ietf-x509-cert-to-name?module="\
+                           "urn:ietf:params:xml:ns:yang:ietf-x509-cert-to-name?module="
                            "ietf-x509-cert-to-name&amp;revision=2013-03-26",
-                           "urn:ietf:params:xml:ns:yang:ietf-netconf-acm?module="\
+                           "urn:ietf:params:xml:ns:yang:ietf-netconf-acm?module="
                            "ietf-netconf-acm&amp;revision=2012-02-22",
-                           "urn:ietf:params:xml:ns:yang:ietf-netconf-with-defaults?module="\
+                           "urn:ietf:params:xml:ns:yang:ietf-netconf-with-defaults?module="
                            "ietf-netconf-with-defaults&amp;revision=2010-06-09",
-                           "urn:ietf:params:xml:ns:netconf:notification:1.0?"\
+                           "urn:ietf:params:xml:ns:netconf:notification:1.0?"
                            "module=notifications&amp;revision=2008-07-14",
-                           "urn:ietf:params:xml:ns:netmod:notification?"\
+                           "urn:ietf:params:xml:ns:netmod:notification?"
                            "module=nc-notifications&amp;revision=2008-07-14",
-                           "urn:ietf:params:xml:ns:yang:ietf-netconf-notifications?module="\
+                           "urn:ietf:params:xml:ns:yang:ietf-netconf-notifications?module="
                            "ietf-netconf-notifications&amp;revision=2012-02-06",
-                           "urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring?"\
+                           "urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring?"
                            "module=ietf-netconf-monitoring&amp;revision=2010-10-04",
-                           "urn:ietf:params:xml:ns:netconf:base:1.0?module=ietf-netconf&amp;"\
+                           "urn:ietf:params:xml:ns:netconf:base:1.0?module=ietf-netconf&amp;"
                            "revision=2011-03-08&amp;features=validate",
-                           "urn:ietf:params:xml:ns:yang:ietf-yang-types?module="\
+                           "urn:ietf:params:xml:ns:yang:ietf-yang-types?module="
                            "ietf-yang-types&amp;revision=2013-07-15",
-                           "urn:ietf:params:xml:ns:yang:ietf-inet-types?module="\
+                           "urn:ietf:params:xml:ns:yang:ietf-inet-types?module="
                            "ietf-inet-types&amp;revision=2013-07-15"]
 
         for cap in capability_list:
@@ -227,6 +239,33 @@ class NetconfMethods(server.NetconfMethods):
 
     def rpc_edit_config(self, unused_session, rpc, *unused_params):
         logger.info("rpc_edit_config")
+        global objectid
+        global objectname
+
+        logger.debug("RPC received:%s", format(etree.tostring(rpc)))
+
+        #Locate object-id
+        ns = {"nc": "urn:ietf:params:xml:ns:netconf:base:1.0",
+              "vdintf": "urn:samsung:vnf-deploy-interface"}
+        data = rpc.find("nc:edit-config/nc:config/vdintf:vnfi/vdintf:object-id",ns)
+
+        if data is not None:
+            logger.debug("Object-id found:"+data.text)
+            objectid = data.text
+        else:
+            logger.debug("edit-config request did not include object-id")
+
+        #Locate object-name
+        ns = {"nc": "urn:ietf:params:xml:ns:netconf:base:1.0",
+              "vdintf": "urn:samsung:vnf-deploy-interface"}
+        data = rpc.find("nc:edit-config/nc:config/vdintf:vnfi/vdintf:object-name",ns)
+
+        if data is not None:
+            logger.debug("Object-name found:"+data.text)
+            objectname = data.text
+        else:
+            logger.debug("edit-config request did not include object-id")
+
         return etree.Element("ok")
 
     def rpc_create_subscription(self, unused_session, rpc, *unused_params):
@@ -246,6 +285,7 @@ class NetconfMethods(server.NetconfMethods):
 # **********************************
 # Setup SNMP
 # **********************************
+
 
 def setup_snmp():
 
@@ -299,6 +339,7 @@ def setup_netconf():
 # **********************************
 # Set ip from /meta.js file
 # **********************************
+
 
 def set_ip_from_metajs():
 
