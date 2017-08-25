@@ -140,6 +140,8 @@ sudo dpkg-reconfigure -f noninteractive cloud-init
 echo "** Setting static ip..."
 echo "network: {config: disabled}" > /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
 sed -i 's/iface ens\([0-9]\) inet dhcp/iface ens\1 inet static\naddress 192.168.122.10\nnetmask 255.255.255.0\ndns-nameservers 8.8.8.8/' /etc/network/interfaces.d/50-cloud-init.cfg
+
+echo "127.0.0.1 netconf_proxy" >> /etc/hosts
 EOF
 
 sudo virt-sysprep -a netconf_proxy.img --hostname netconf_proxy --root-password password:m --firstboot install_script
