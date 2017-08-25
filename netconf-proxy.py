@@ -110,7 +110,7 @@ def snmp_trap_receiver(transport_dispatcher, transport_domain, transport_address
             # TODO: Missing mapping from SNMP to Netconf Values
 
             d = datetime.datetime.utcnow()
-            msec = d.strftime("%f")[0:2]
+            msec = d.strftime("%f")[0:3]
 
             values = {"time": d.strftime("%Y-%m-%dT%H:%M:%S.{}Z".format(msec)),
                       "systemdn": "fd19:bcb8:3cb5:2000::c0a8:8201",
@@ -351,7 +351,17 @@ def set_ip_from_metajs():
 
     # get ip address
     matched = re.search(""""VNF_IP_ADDR": "([0-9\.]*)""""", metajs)
+    if not matched:
+        logger.error("No VNF_IP_ADDR info in meta.js. Aborting...")
+        exit(-1)
     ip_address = matched.group(1)
+
+    # get gateway address
+    matched = re.search(""""VNF_GATEWAY": "([0-9\.]*)""""", metajs)
+    if not matched:
+        logger.error("No VNF_GATEWAY info in meta.js. Aborting...")
+        exit(-1)
+    gateway = matched.group(1)
 
     # get ip device
     devices = os.listdir("/sys/class/net/")
@@ -360,12 +370,20 @@ def set_ip_from_metajs():
         if match:
             device = dev
 
-    logger.info("Changing ip: "+ip_address+" on device: "+device)
+    logger.info("Changing ip: "+ip_address+" via: "+ gateway +" on device: "+device)
 
     # set ip
     subprocess.call(shlex.split("ifconfig " + device + " 0.0.0.0"))
     subprocess.call(shlex.split("ip addr add " + ip_address + "/24  dev " + device))
-    subprocess.call(shlex.split("sed -i 's/address \\(.*\\)/address "+ip_address+"/' /etc/network/interfaces.d/50-cloud-init.cfg"))
+    subprocess.call(shlex.split("ip route add default via " + gateway))
+    subprocess.call(shlex.split("sed -i 's/address \\(.*\\)/address " + ip_address + "/' /etc/network/interfaces.d/50-cloud-init.cfg"))
+
+    # Next commands replaces or adds a gateway to network interface
+    command = """bash -c "grep -q '^gateway ' /etc/network/interfaces.d/50-cloud-init.cfg """ \
+              """&& sed -i 's/gateway \\(.*\\)/gateway """ + gateway + """/' /etc/network/interfaces.d/50-cloud-init.cfg """ \
+              """|| echo gateway """ + gateway + """ >> /etc/network/interfaces.d/50-cloud-init.cfg" """
+    logger.info("Command:"+command)
+    subprocess.call(shlex.split(command))
 
 # **********************************
 # Main
