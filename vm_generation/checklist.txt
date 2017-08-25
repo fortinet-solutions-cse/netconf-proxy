@@ -6,3 +6,6 @@ Netconf proxy is listening on ::830 and ::162
 Netconf proxy is listening on all interfaces
 Credentials have been properly updated
 Pytest run without failures
+ip route shows default gateway from /meta.js
+/etc/network/interfaces.d/50-cloud-init.cfg contains proper gateway from /meta.js
+
