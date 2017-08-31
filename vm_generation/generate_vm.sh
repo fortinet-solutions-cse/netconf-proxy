@@ -62,6 +62,9 @@ sudo sed -i "s/replace_with_user/${NETCONF_USER}/" /tmp/guest_netconf/opt/netcon
 sudo sed -i "s/replace_with_password/${NETCONF_PASSWORD}/" /tmp/guest_netconf/opt/netconf-proxy.py
 sudo sed -i "s/replace_with_password/${NETCONF_PASSWORD}/" /tmp/guest_netconf/opt/netconf-tester.py
 
+#remove stored netconf data in case it was taken from original filesystem
+sudo rm /tmp/guest_netconf/opt/store_netconf_proxy.pckl
+
 # Extra: add pycharm as a temporary measure to debug code
 sudo rsync -r -v /opt/pycharm-community-*  /tmp/guest_netconf/opt/
 

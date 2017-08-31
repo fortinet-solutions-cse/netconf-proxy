@@ -5,6 +5,7 @@ Root/Netconf credentials work
 Netconf proxy is listening on ::830 and ::162
 Netconf proxy is listening on all interfaces
 Credentials have been properly updated
+There is no 'store_netconf_proxy.pckl' file in /opt/
 Pytest run without failures
 ip route shows default gateway from /meta.js
 /etc/network/interfaces.d/50-cloud-init.cfg contains proper gateway from /meta.js

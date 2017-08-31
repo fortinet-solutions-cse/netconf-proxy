@@ -26,6 +26,7 @@ import subprocess
 import shlex
 import argparse
 import datetime
+import pickle
 
 
 # **********************************
@@ -266,6 +267,11 @@ class NetconfMethods(server.NetconfMethods):
         else:
             logger.debug("edit-config request did not include object-id")
 
+        #Store data in case there is a reboot
+        with open("store_netconf_proxy.pckl", "wb") as file:
+            pickle.dump([objectid,objectname],file)
+
+
         return etree.Element("ok")
 
     def rpc_create_subscription(self, unused_session, rpc, *unused_params):
@@ -409,6 +415,14 @@ if __name__ == "__main__":
 
     SERVER_DEBUG = logger.getEffectiveLevel() == logging.DEBUG
     logger.info("SERVER_DEBUG:" + str(SERVER_DEBUG))
+
+    # Recover data in case there was a reboot
+    try:
+        with open("store_netconf_proxy.pckl", "rb") as file:
+            objectid, objectname = pickle.load(file)
+        logger.debug("Read previous values from store_netconf_proxy.pckl: "+str(objectid)+", "+str(objectname))
+    except:
+        logger.warning("store_netconf_proxy.pckl file does not exist. This could be first time execution")
 
     setup_netconf()
 
