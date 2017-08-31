@@ -1,3 +1,6 @@
+v0.9.2
+ - Persist object-id and object-name on reboots
+
 v0.9.1
 
  - VNF Gateway info retrieved from /meta.js and 3 digits send in timestamp
