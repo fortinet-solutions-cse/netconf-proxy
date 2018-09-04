@@ -69,7 +69,6 @@ py==1.4.34
 pyang==1.7.3
 pyasn1==0.3.2
 pycparser==2.18
-pycrypto==2.6.1
 Pygments==2.1
 pyinotify==0.9.6
 pylint==1.5.2
